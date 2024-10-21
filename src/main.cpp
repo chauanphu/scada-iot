@@ -4,6 +4,7 @@
 #include "secrets.h"
 #include "OTAHandler.h"
 #include <time.h>  // For time management
+#include "BusinessLogicHandler.h"
 
 // Global objects
 WiFiClient wifiClient;
@@ -11,6 +12,9 @@ PubSubClient mqttClient(wifiClient);
 
 // Instantiate OTAHandler with the existing mqttClient
 OTAHandler otaHandler(mqttClient);
+
+// Instantiate BusinessLogicHandler
+BusinessLogicHandler* businessLogicHandler;
 
 // Function prototypes
 void setup_wifi();
@@ -33,14 +37,16 @@ void setup() {
 
     // Connect to Wi-Fi
     setup_wifi();
-    configTime(25200, 0, "pool.ntp.org", "time.nist.gov");  // 25200 seconds is UTC+7
-
-    // Wait for time to be set
+    configTime(25200, 0, "pool.ntp.org", "time.nist.gov");
     Serial.println("Waiting for time synchronization...");
-    while (!time(nullptr)) {
-        delay(500);
+    
+    // Wait until the time is synchronized
+    while (time(nullptr) < 100000) { // Wait until Jan 2, 1970
+        Serial.print(".");
+        delay(1000);
     }
-    Serial.println("Time synchronized.");
+    Serial.println("\nTime synchronized.");
+
     // Set MQTT server and callback function
     mqttClient.setServer(MQTT_SERVER, MQTT_PORT);
     mqttClient.setCallback(mqttCallback);
@@ -54,6 +60,9 @@ void setup() {
     }
 
     // Additional setup code if needed
+    // Instantiate business logic handler after Wi-Fi is connected
+    macAddress = getFormattedMAC();
+    businessLogicHandler = new BusinessLogicHandler(mqttClient, macAddress);
 }
 
 void loop() {
