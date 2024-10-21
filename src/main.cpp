@@ -1,7 +1,9 @@
 #include <WiFi.h>
 #include <PubSubClient.h>
+#include <ArduinoJson.h> // JSON library for handling status in JSON format
 #include "secrets.h"
 #include "OTAHandler.h"
+#include <time.h>  // For time management
 
 // Global objects
 WiFiClient wifiClient;
@@ -16,9 +18,14 @@ bool connectToMQTT();
 String getFormattedMAC();
 void mqttCallback(char* topic, byte* payload, unsigned int length);
 
+// Abstract business logic function prototypes
+String get_status();
+void handle_command(const String& command);
+
 // Global variables
 String macAddress;
 String commandTopic;
+String statusTopic;
 
 void setup() {
     Serial.begin(115200);
@@ -26,7 +33,14 @@ void setup() {
 
     // Connect to Wi-Fi
     setup_wifi();
+    configTime(25200, 0, "pool.ntp.org", "time.nist.gov");  // 25200 seconds is UTC+7
 
+    // Wait for time to be set
+    Serial.println("Waiting for time synchronization...");
+    while (!time(nullptr)) {
+        delay(500);
+    }
+    Serial.println("Time synchronized.");
     // Set MQTT server and callback function
     mqttClient.setServer(MQTT_SERVER, MQTT_PORT);
     mqttClient.setCallback(mqttCallback);
@@ -59,11 +73,15 @@ void loop() {
     
     mqttClient.loop();
 
-    // Your business logic code
-    // e.g., read sensors, process data, perform tasks
-
-    // Example: Delay to simulate work
-    delay(1000);
+    // Business logic: Publish device status at regular intervals
+    static unsigned long lastStatusPublish = 0;
+    unsigned long now = millis();
+    if (now - lastStatusPublish > status_interval) { // Publish status every 5 seconds
+        String status = get_status();
+        mqttClient.publish(statusTopic.c_str(), status.c_str(), true);
+        Serial.println("Status published.");
+        lastStatusPublish = now;
+    }
 }
 
 // Function to connect to Wi-Fi
@@ -87,6 +105,7 @@ void setup_wifi() {
         // Get and format MAC address
         macAddress = getFormattedMAC();
         commandTopic = MQTT_COMMAND_TOPIC_PREFIX + macAddress + MQTT_COMMAND_TOPIC_SUFFIX;
+        statusTopic = MQTT_STATUS_TOPIC_PREFIX + macAddress + MQTT_STATUS_TOPIC_SUFFIX;
         Serial.print("MAC Address: ");
         Serial.println(macAddress);
     } else {
@@ -161,9 +180,8 @@ void mqttCallback(char* topic, byte* payload, unsigned int length) {
     }
     // Handle business logic messages
     else if (topicStr == commandTopic) {
-        // Process the business logic message
         Serial.println("Main - Processing business logic command...");
-        // Add your business logic processing here
+        handle_command(message);  // Handle the command logic
     }
 }
 
@@ -173,4 +191,83 @@ String getFormattedMAC() {
     mac.replace(":", "");
     mac.toLowerCase();
     return mac;
+}
+
+// Abstract function to get the current status in JSON format
+String get_status() {
+    // Example: Collect and format status data
+    DynamicJsonDocument jsonDoc(200); 
+
+    // Get current time (in seconds since Jan 1, 1970)
+    time_t now;
+    struct tm timeinfo;
+    time(&now);
+    localtime_r(&now, &timeinfo);
+
+    // Populate the JSON document with required data
+    jsonDoc["time"] = now;  // Add real UTC+7 time in seconds
+    jsonDoc["toggle"] = 0;  // Example toggle value (customize as needed)
+    jsonDoc["gps_log"] = "10.8455953";  // Example GPS longitude (replace with actual value)
+    jsonDoc["gps_lat"] = "106.6099666";  // Example GPS latitude (replace with actual value)
+    jsonDoc["voltage"] = 220.5;  // Example voltage value
+    jsonDoc["current"] = 0.04;  // Example current value
+    jsonDoc["power"] = 105;  // Example power value
+    jsonDoc["power_factor"] = 0.98;  // Example power factor
+    jsonDoc["frequency"] = 50;  // Example frequency in Hz
+    jsonDoc["total_energy"] = 10;  // Example total energy consumption
+
+    // Serialize the JSON document to a string
+    String status;
+    serializeJson(jsonDoc, status);
+    return status;
+}
+
+// Abstract function to handle incoming commands
+void handle_command(const String& command) {
+    Serial.print("Handling command: ");
+
+    // Parse the command using ArduinoJson
+    StaticJsonDocument<200> jsonDoc;
+    DeserializationError error = deserializeJson(jsonDoc, command);
+
+    if (error) {
+        Serial.println("Failed to parse command JSON.");
+        return;
+    }
+
+    // Get the command type and payload
+    String commandType = jsonDoc["command"];
+    JsonObject payload = jsonDoc["payload"];
+
+    // Process the command based on type
+    if (commandType == "REBOOT") {
+        Serial.println("Rebooting device...");
+        ESP.restart();  // Reboot the ESP32
+    }
+    else if (commandType == "TOGGLE") {
+        String toggleValue = payload["toggle"];
+        if (toggleValue == "on") {
+            Serial.println("Toggling device ON...");
+            // Add code to turn device ON
+        }
+        else if (toggleValue == "off") {
+            Serial.println("Toggling device OFF...");
+            // Add code to turn device OFF
+        }
+    }
+    else if (commandType == "SCHEDULE") {
+        int hour_on = payload["hour_on"];
+        int minute_on = payload["minute_on"];
+        int hour_off = payload["hour_off"];
+        int minute_off = payload["minute_off"];
+
+        Serial.println("Scheduling device ON and OFF times...");
+        Serial.printf("ON: %02d:%02d, OFF: %02d:%02d\n", hour_on, minute_on, hour_off, minute_off);
+
+        // Add logic to handle scheduling
+        // You can store these times in variables and use them in your loop
+    }
+    else {
+        Serial.println("Unknown command.");
+    }
 }
