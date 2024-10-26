@@ -70,7 +70,7 @@ void BusinessLogicHandler::handleToggle(const String& state) {
     } else if (state == "off") {
         Serial.println("Toggling device OFF...");
         deviceState = false;
-        // ...
+        // ..
     }
 }
 
