@@ -86,8 +86,8 @@ void loop() {
     static unsigned long lastStatusPublish = 0;
     unsigned long now = millis();
     if (now - lastStatusPublish > status_interval) { // Publish status every 5 seconds
-        String status = get_status();
-        mqttClient.publish(statusTopic.c_str(), status.c_str(), true);
+        String status = businessLogicHandler->getStatus();  // Use getStatus from BusinessLogicHandler
+        mqttClient.publish(statusTopic.c_str(), status.c_str());
         Serial.println("Status published.");
         lastStatusPublish = now;
     }
@@ -172,6 +172,11 @@ bool connectToMQTT() {
 
 // MQTT callback function
 void mqttCallback(char* topic, byte* payload, unsigned int length) {
+    if (businessLogicHandler == nullptr) {
+        Serial.println("Business logic handler not initialized yet.");
+        return;
+    }
+    
     String topicStr = String(topic);
     String message;
     for (unsigned int i = 0; i < length; i++) {
@@ -190,7 +195,7 @@ void mqttCallback(char* topic, byte* payload, unsigned int length) {
     // Handle business logic messages
     else if (topicStr == commandTopic) {
         Serial.println("Main - Processing business logic command...");
-        handle_command(message);  // Handle the command logic
+        businessLogicHandler->handleCommand(message);  // Handle the command logic
     }
 }
 
@@ -200,83 +205,4 @@ String getFormattedMAC() {
     mac.replace(":", "");
     mac.toLowerCase();
     return mac;
-}
-
-// Abstract function to get the current status in JSON format
-String get_status() {
-    // Example: Collect and format status data
-    DynamicJsonDocument jsonDoc(200); 
-
-    // Get current time (in seconds since Jan 1, 1970)
-    time_t now;
-    struct tm timeinfo;
-    time(&now);
-    localtime_r(&now, &timeinfo);
-
-    // Populate the JSON document with required data
-    jsonDoc["time"] = now;  // Add real UTC+7 time in seconds
-    jsonDoc["toggle"] = 0;  // Example toggle value (customize as needed)
-    jsonDoc["gps_log"] = "10.8455953";  // Example GPS longitude (replace with actual value)
-    jsonDoc["gps_lat"] = "106.6099666";  // Example GPS latitude (replace with actual value)
-    jsonDoc["voltage"] = 220.5;  // Example voltage value
-    jsonDoc["current"] = 0.04;  // Example current value
-    jsonDoc["power"] = 105;  // Example power value
-    jsonDoc["power_factor"] = 0.98;  // Example power factor
-    jsonDoc["frequency"] = 50;  // Example frequency in Hz
-    jsonDoc["total_energy"] = 10;  // Example total energy consumption
-
-    // Serialize the JSON document to a string
-    String status;
-    serializeJson(jsonDoc, status);
-    return status;
-}
-
-// Abstract function to handle incoming commands
-void handle_command(const String& command) {
-    Serial.print("Handling command: ");
-
-    // Parse the command using ArduinoJson
-    StaticJsonDocument<200> jsonDoc;
-    DeserializationError error = deserializeJson(jsonDoc, command);
-
-    if (error) {
-        Serial.println("Failed to parse command JSON.");
-        return;
-    }
-
-    // Get the command type and payload
-    String commandType = jsonDoc["command"];
-    JsonObject payload = jsonDoc["payload"];
-
-    // Process the command based on type
-    if (commandType == "REBOOT") {
-        Serial.println("Rebooting device...");
-        ESP.restart();  // Reboot the ESP32
-    }
-    else if (commandType == "TOGGLE") {
-        String toggleValue = payload["toggle"];
-        if (toggleValue == "on") {
-            Serial.println("Toggling device ON...");
-            // Add code to turn device ON
-        }
-        else if (toggleValue == "off") {
-            Serial.println("Toggling device OFF...");
-            // Add code to turn device OFF
-        }
-    }
-    else if (commandType == "SCHEDULE") {
-        int hour_on = payload["hour_on"];
-        int minute_on = payload["minute_on"];
-        int hour_off = payload["hour_off"];
-        int minute_off = payload["minute_off"];
-
-        Serial.println("Scheduling device ON and OFF times...");
-        Serial.printf("ON: %02d:%02d, OFF: %02d:%02d\n", hour_on, minute_on, hour_off, minute_off);
-
-        // Add logic to handle scheduling
-        // You can store these times in variables and use them in your loop
-    }
-    else {
-        Serial.println("Unknown command.");
-    }
 }

@@ -21,20 +21,24 @@ void BusinessLogicHandler::handleCommand(const String& command) {
     }
 
     String commandType = jsonDoc["command"];
-    JsonObject payload = jsonDoc["payload"];
-
+    
     if (commandType == "REBOOT") {
         Serial.println("Rebooting device...");
         ESP.restart();
     } else if (commandType == "TOGGLE") {
-        String toggleValue = payload["toggle"];
-        handleToggle(toggleValue);
+        // Convert payload to string
+        String payloadStr = jsonDoc["payload"];
+        handleToggle(payloadStr);
     } else if (commandType == "SCHEDULE") {
+        JsonObject payload = jsonDoc["payload"];
         int hourOn = payload["hour_on"];
         int minuteOn = payload["minute_on"];
         int hourOff = payload["hour_off"];
         int minuteOff = payload["minute_off"];
         handleSchedule(hourOn, minuteOn, hourOff, minuteOff);
+    } else {
+        Serial.print("Unknown command type: ");
+        Serial.println(commandType);
     }
 }
 
@@ -71,6 +75,9 @@ void BusinessLogicHandler::handleToggle(const String& state) {
         Serial.println("Toggling device OFF...");
         deviceState = false;
         // ...
+    } else {
+        Serial.print("Unknown toggle state: ");
+        Serial.println(state);
     }
 }
 
