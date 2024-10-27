@@ -81,7 +81,7 @@ void loop() {
     }
     
     mqttClient.loop();
-
+    businessLogicHandler->update();  // Call update method in BusinessLogicHandler
     // Business logic: Publish device status at regular intervals
     static unsigned long lastStatusPublish = 0;
     unsigned long now = millis();

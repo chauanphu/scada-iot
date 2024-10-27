@@ -1,20 +1,15 @@
 #ifndef MODBUS_H
 #define MODBUS_H
 
-
 #include <Arduino.h>
 #include <Stream.h>
 #include <vector>
 using namespace std;
 
-
-
 #define Coil_Register       0x01
 #define Discret_Register    0x02
 #define Holding_Register    0x03
 #define Input_Register      0x04
-
-
 
 class Modbus {
   private:
@@ -30,18 +25,14 @@ class Modbus {
     int       SlaveID       = 0x01;
     byte      txout[9]      = {0, 0, 0, 0, 0, 0, 0, 0, 0};
 
-
   public:
-
     Modbus() {
       this->s     = NULL;
       this->mode_ = -1;
     }
-
     Modbus(Stream &st) {
       this->s = &st;
     }
-
     bool init(int mode = -1, bool en_log = false) {
       this->mode_ =  mode;
       this->log   =  en_log;
@@ -52,11 +43,9 @@ class Modbus {
       return true;
     }
 
-
     void setTimeout(uint16_t timeout) {
       timeout_ = timeout;
     }
-
 
     int coilRead(int address) {
       return coilRead(SlaveID, address);
@@ -70,8 +59,6 @@ class Modbus {
         return -1;
       }
     }
-
-
 
     // Read Discret Register    0x02
     int discreteInputRead(int address) {
@@ -103,8 +90,6 @@ class Modbus {
       }
     }
 
-
-
     // Read Holding Register    0x03
     long holdingRegisterRead(int address) {
       return holdingRegisterRead(SlaveID, address, 1);
@@ -123,7 +108,6 @@ class Modbus {
       }
     }
 
-
     int ReadHoldingReg(int address) {
       return 0;
     }
@@ -135,11 +119,6 @@ class Modbus {
     int ReadHoldingReg(int slaveId, int address, int nbyte) {
       return 0;
     }
-
-
-
-
-
     // Read Input Register      0x04
     long inputRegisterRead(int address) {
       return inputRegisterRead(SlaveID , address, 1);
@@ -255,7 +234,6 @@ class Modbus {
           }
         }
       }
-
       if (log) {
         Serial.print("RX: ");
         //        cmd.print("RX: ");
@@ -266,7 +244,6 @@ class Modbus {
         Serial.println();
         //        cmd.println();
       }
-
       if (lenRx > 2) {
         int crc1 = rawRx[lenRx - 1] << 8 | rawRx[lenRx - 2];
         int crc2 = CheckCRC(rawRx, lenRx - 2);
@@ -281,12 +258,6 @@ class Modbus {
         return -1;
       }
     }
-
-
-
-
-    //  ~Modbus();
-
 
     // Read Coil Register       0x01
     int ReadCoilReg(int address) {
@@ -303,15 +274,7 @@ class Modbus {
       } else {
         return -1;
       }
-
     }
-
-
-
-
-
-
-
 
     byte byteRead(int index) {
       return rawRx[index + 3];
@@ -348,10 +311,6 @@ class Modbus {
       else        val = int16(address + 1) << 16 | int16(address);
       return val;
     }
-
-
-
-
     int CheckCRC(byte *buf, int len) {
       int           nominal   = 0xA001;
       int           crc       = 0xFFFF;
@@ -374,6 +333,4 @@ class Modbus {
       return crc;
     }
 };
-
-
 #endif

@@ -10,8 +10,8 @@
 
 const uint8_t daysArray[]    PROGMEM = { 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };// số ngày có trong tháng
 const uint8_t dowArray[]     PROGMEM = { 0,   3,  2,  5,  0,  3,  5,  1,  4,  6,  2,  4 };// mảng chuyển đổi thứ của tuần
-const char*   strMonth[]     PROGMEM = {"Unknown", "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"};
-const char*   strDayOfWeek[] PROGMEM = {"Unknown", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"};
+// const char*   strMonth[]     PROGMEM = {"Unknown", "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"};
+// const char*   strDayOfWeek[] PROGMEM = {"Unknown", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"};
 
 
 
@@ -29,11 +29,8 @@ struct RTCDateTime {                                                        // m
 };                                                                          //
 #endif                                                                                                        //
 
-
 class NTPClient {                                                           //
   public:
-
-
     NTPClient(UDP& udp) {
       this->_udp            = &udp;
     }
@@ -74,10 +71,6 @@ class NTPClient {                                                           //
       this->_poolServerName = NULL;
       this->_updateInterval = updateInterval;
     }
-
-
-
-
     void setPoolServerName(const char* poolServerName) {//       Set time server name
       this->_poolServerName = poolServerName;
     }
@@ -176,10 +169,6 @@ class NTPClient {                                                           //
       return (this->getEpochTime() % 60);
     }
 
-
-
-
-
     RTCDateTime getDateTime(void) {                                                                           // hàm đọc thời gian
       return this->ConverterUnixtimeToDateTime(this->getEpochTime());                                                        // trả thời gian được tính toán
     }
@@ -266,25 +255,6 @@ class NTPClient {                                                           //
       return dow;
     }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     String getFormattedTime() const {//@return time formatted like `hh:mm:ss`
       unsigned long   rawTime     = this->getEpochTime();
       unsigned long   hours       = (rawTime % 86400L) / 3600;
@@ -304,9 +274,6 @@ class NTPClient {                                                           //
       this->_udp->stop();
       this->_udpSetup = false;
     }
-
-
-
 
   private:                                                                                       // mảng lưu dữ liệu
 

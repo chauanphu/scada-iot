@@ -1,13 +1,11 @@
 #include <WiFi.h>  // WiFi library
 #include <Arduino.h>
+#include "button.h"
+#include "types.h"
 
-// Define a data structure to hold settings
-struct SettingsData {
-  int hour_on;
-  int minute_on;
-  int hour_off;
-  int minute_off;
-};
+Button Button_UP(36, BUTTON_ANALOG, 1000, 2200);
+Button Button_DN(36, BUTTON_ANALOG, 1000, 470);
+Button Button_OK(36, BUTTON_ANALOG, 1000, 0);
 
 // Global variables
 byte display_index;     // Variable to store selected screen index

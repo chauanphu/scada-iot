@@ -1,18 +1,7 @@
 #include <Arduino.h>
 #include "WiFi.h"
 #include "Modbus.h"
-
-// Define a data structure to hold power meter readings
-struct PowerMeterData {
-  double total_energy;
-  double total_energy_reverse;
-  double total_energy_forward;
-  double voltage;
-  double current;
-  double power;
-  double power_factor;
-  double frequency;
-};
+#include "types.h"
 
 // Initialize Modbus communication
 void power_meter_begin() {
