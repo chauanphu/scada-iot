@@ -15,8 +15,8 @@ PowerMeterResponse power_meter_read(PowerMeterData &data) {
   static byte mun_erro;
 
   // Timing logic to control read frequency
-  if (millis() % 30000ul > 15000ul) return PowerMeterResponse::TIMEOUT;
-  if (millis() < timer)             return PowerMeterResponse::TIMEOUT;
+  if (millis() % 30000ul > 15000ul) return PowerMeterResponse::TIMECOUNT;
+  if (millis() < timer)             return PowerMeterResponse::TIMECOUNT;
   timer = millis() + 100;
 
   // Check and configure Serial2 if necessary
@@ -54,7 +54,6 @@ PowerMeterResponse power_meter_read(PowerMeterData &data) {
       mun_erro++;
       return PowerMeterResponse::TIMEOUT;
     } else {
-      mun_erro++;
       return PowerMeterResponse::TIMECOUNT;
     }
   }

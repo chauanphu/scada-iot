@@ -198,12 +198,16 @@ void BusinessLogicHandler::update() {
         DayTime = timeClient.getDateTime();
     }
 
+    // FLASH_ACTIVE_led(10, 1000);
+    digitalWrite(PR_LED, millis() % 1000 < 500);
+    digitalWrite(PWM_AUTO_RESET, !digitalRead(PWM_AUTO_RESET));
+
     // Update GPS data
     updateGPS();
 
     // Handle scheduling
     updateScheduling();
-
+    digitalWrite(OUTPUT_CRT, deviceState ? HIGH : LOW);
     // Read buttons
     // updateButtons();
 
@@ -211,11 +215,11 @@ void BusinessLogicHandler::update() {
     // Intialize new settings
     
     LCD_print(settings);
-
+    digitalWrite(LED_BUILTIN, !LED_BUILTIN_ON_STATE);
+      
     // Read power meter data
-    if (!power_meter_read(powerMeterData)) {
-
-    }
+    if (power_meter_read(powerMeterData) == PowerMeterResponse::TIMEOUT) isAlive = "0";
+    else isAlive = "1";
 
     // Other periodic tasks
 }

@@ -90,6 +90,7 @@ void loop() {
         if (businessLogicHandler->isAlive == "0") {
             Serial.println("Device is not alive. Skipping status publish.");
             mqttClient.publish(aliveTopic.c_str(), "0", true);
+            lastStatusPublish = now;
             return;
         }
         String status = businessLogicHandler->getStatus();  // Use getStatus from BusinessLogicHandler
