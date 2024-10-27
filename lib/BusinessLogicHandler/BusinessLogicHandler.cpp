@@ -49,6 +49,7 @@ BusinessLogicHandler::BusinessLogicHandler(PubSubClient& client, const String& m
       macAddress(mac),
       timeClient(ntpUDP, "europe.pool.ntp.org", 7 * 3600, 60000),
       settings({0, 0, 0, 0}),
+      isAlive("0"),
 
     //   buttonUp(36, BUTTON_ANALOG, 1000, 2200),
     //   buttonDn(36, BUTTON_ANALOG, 1000, 470),
@@ -100,8 +101,8 @@ void BusinessLogicHandler::initializeDevices() {
     Serial2.begin(9600, SERIAL_8N1, RX_PIN, TX_PIN);
 
     // Initialize other components
-    power_meter_begin();
-
+    if (power_meter_read(powerMeterData) == PowerMeterResponse::TIMEOUT) isAlive = "0";
+    else isAlive = "1";
     // Any additional setup...
 }
 
@@ -212,7 +213,9 @@ void BusinessLogicHandler::update() {
     LCD_print(settings);
 
     // Read power meter data
-    power_meter_read(powerMeterData);
+    if (!power_meter_read(powerMeterData)) {
+
+    }
 
     // Other periodic tasks
 }

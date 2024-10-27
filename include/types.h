@@ -27,3 +27,16 @@ struct PowerMeterData {
 };
 
 #endif // POWER_METER_DATA_H
+
+#ifndef STATUS_H
+#define STATUS_H
+
+enum PowerMeterResponse {
+  POWERON, // Read successful
+  LOSTPOWER, // Voltage is 0,
+  TIMEOUT, // Timeout occurred, mun_error > 100
+  TIMECOUNT, // increase mun_error
+  CONFIGURED // Configuration successful
+};
+
+#endif // STATUS_H

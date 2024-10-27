@@ -25,6 +25,7 @@ public:
     // Public methods
     void handleCommand(const String& command);
     String getStatus();
+    String isAlive;
     void update(); // Method to be called in main loop
     void initializeDevices(); // Device initialization
 

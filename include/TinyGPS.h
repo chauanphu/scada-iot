@@ -280,10 +280,7 @@ class TinyGPS {
       int direction = (int)((course + 11.25f) / 22.5f);
       return directions[direction % 16];
     }
-
-
-
-
+    
   private:
     enum {_GPS_SENTENCE_GPGGA, _GPS_SENTENCE_GPRMC, _GPS_SENTENCE_OTHER};
 
