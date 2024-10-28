@@ -12,6 +12,7 @@ byte display_index;     // Variable to store selected screen index
 byte Cursor_line;       // Variable to store selected line on the screen
 byte display_set;       // Variable to indicate display mode
 byte Cursor_index = 100;  // Variable to store cursor position
+RTCDateTime DayTime;    // Variable to store current date and time
 
 // Function to calculate the time since the last button press in milliseconds
 unsigned long button_old_pluse_time() {
@@ -36,7 +37,7 @@ void LCD_display_index() {
     if ((Button_OK.IsFalling()) || (Button_UP.IsFalling()) || (Button_DN.IsFalling())) {
       display_index = 1;  // Enter the settings selection screen
       Cursor_line   = 0;  // Set cursor to the first line
-      lcd.clear();
+      deviceLCD.clear();
     }
   } else {  // If in the settings selection screen
     if (Button_UP.IsFalling()) {
@@ -50,7 +51,7 @@ void LCD_display_index() {
     }
     if (Button_OK.IsFalling()) {
       display_set = 1;  // Enter setup mode
-      lcd.clear();
+      deviceLCD.clear();
     }
   }
 }
@@ -59,53 +60,53 @@ void LCD_display_index() {
 void LCD_display_print_index(const SettingsData& settings) {
   char s[32];  // Buffer for string manipulation
   if (display_index == 0) {  // Main screen
-    lcd.setCursor(0, 1);
+    deviceLCD.setCursor(0, 1);
     sprintf(s, "     %02u/%02u/%04u     ", DayTime.day, DayTime.month, DayTime.year);
-    lcd.print(s);
+    deviceLCD.print(s);
 
-    lcd.setCursor(0, 0);
+    deviceLCD.setCursor(0, 0);
     sprintf(s, "      %02u:%02u:%02u      ", DayTime.hour, DayTime.minute, DayTime.second);
-    lcd.print(s);
+    deviceLCD.print(s);
 
-    lcd.setCursor(0, 3);
-    lcd.print("tell:  +84915999472 ");
+    deviceLCD.setCursor(0, 3);
+    deviceLCD.print("tell:  +84915999472 ");
 
-    lcd.setCursor(0, 2);
-    lcd.print("                    ");
+    deviceLCD.setCursor(0, 2);
+    deviceLCD.print("                    ");
   } else {
     int HourStart   = settings.hour_on;
     int MinuteStart = settings.minute_on;
     int HourEnd     = settings.hour_off;
     int MinuteEnd   = settings.minute_off;
 
-    lcd.setCursor(1, 0);
+    deviceLCD.setCursor(1, 0);
     sprintf(s, " Time On:   %02u:%02u ", HourStart, MinuteStart);
-    lcd.print(s);
+    deviceLCD.print(s);
 
-    lcd.setCursor(1, 1);
+    deviceLCD.setCursor(1, 1);
     sprintf(s, " Time Off:  %02u:%02u ", HourEnd, MinuteEnd);
-    lcd.print(s);
+    deviceLCD.print(s);
 
-    lcd.setCursor(1, 2);
-    lcd.print(" WIFI information ");
+    deviceLCD.setCursor(1, 2);
+    deviceLCD.print(" WIFI information ");
 
     // Display cursor indicators
     for (int i = 0; i < 3; i++) {
       if (Cursor_line == i) {
-        lcd.setCursor(0, i);
-        lcd.print(">");
-        lcd.setCursor(19, i);
-        lcd.print("<");
+        deviceLCD.setCursor(0, i);
+        deviceLCD.print(">");
+        deviceLCD.setCursor(19, i);
+        deviceLCD.print("<");
       } else {
-        lcd.setCursor(0, i);
-        lcd.print(" ");
-        lcd.setCursor(19, i);
-        lcd.print(" ");
+        deviceLCD.setCursor(0, i);
+        deviceLCD.print(" ");
+        deviceLCD.setCursor(19, i);
+        deviceLCD.print(" ");
       }
     }
 
-    lcd.setCursor(0, 3);
-    lcd.print("                    ");
+    deviceLCD.setCursor(0, 3);
+    deviceLCD.print("                    ");
   }
 }
 
@@ -144,10 +145,10 @@ void SetTimeOn(SettingsData& settings) {
 
   char s[32];
 
-  lcd.setCursor(0, 0);
-  lcd.print("Set up time on      ");
+  deviceLCD.setCursor(0, 0);
+  deviceLCD.print("Set up time on      ");
 
-  lcd.setCursor(0, 1);
+  deviceLCD.setCursor(0, 1);
   if ((millis() % 1000 < 300) && (button_old_pluse_time() > 500)) {
     switch (Cursor_index) {
       case 0: sprintf(s, "       __:%02u        ", MinuteStart); break;
@@ -156,12 +157,12 @@ void SetTimeOn(SettingsData& settings) {
   } else {
     sprintf(s, "       %02u:%02u        ", HourStart, MinuteStart);
   }
-  lcd.print(s);
+  deviceLCD.print(s);
 
-  lcd.setCursor(0, 2);
-  lcd.print("                    ");
-  lcd.setCursor(0, 3);
-  lcd.print("                    ");
+  deviceLCD.setCursor(0, 2);
+  deviceLCD.print("                    ");
+  deviceLCD.setCursor(0, 3);
+  deviceLCD.print("                    ");
 
   // Update settings
   settings.hour_on   = HourStart;
@@ -203,10 +204,10 @@ void SetTimeOff(SettingsData& settings) {
 
   char s[32];
 
-  lcd.setCursor(0, 0);
-  lcd.print("Set up time off     ");
+  deviceLCD.setCursor(0, 0);
+  deviceLCD.print("Set up time off     ");
 
-  lcd.setCursor(0, 1);
+  deviceLCD.setCursor(0, 1);
   if ((millis() % 1000 < 300) && (button_old_pluse_time() > 500)) {
     switch (Cursor_index) {
       case 0: sprintf(s, "       __:%02u        ", MinuteEnd); break;
@@ -215,18 +216,17 @@ void SetTimeOff(SettingsData& settings) {
   } else {
     sprintf(s, "       %02u:%02u        ", HourEnd, MinuteEnd);
   }
-  lcd.print(s);
+  deviceLCD.print(s);
 
-  lcd.setCursor(0, 2);
-  lcd.print("                    ");
-  lcd.setCursor(0, 3);
-  lcd.print("                    ");
+  deviceLCD.setCursor(0, 2);
+  deviceLCD.print("                    ");
+  deviceLCD.setCursor(0, 3);
+  deviceLCD.print("                    ");
 
   // Update settings
   settings.hour_off   = HourEnd;
   settings.minute_off = MinuteEnd;
 }
-
 
 String toStringIp(IPAddress ip) {
   String res = "";
@@ -244,23 +244,23 @@ void ShowWifiInformation() {
   }
 
   if (WiFi.status() == WL_CONNECTED) {
-    lcd.setCursor(0, 0);
-    lcd.print(WiFi.SSID());
-    lcd.print("                    ");
-    lcd.setCursor(0, 1);
-    lcd.print(toStringIp(WiFi.localIP()));
-    lcd.print("                    ");
+    deviceLCD.setCursor(0, 0);
+    deviceLCD.print(WiFi.SSID());
+    deviceLCD.print("                    ");
+    deviceLCD.setCursor(0, 1);
+    deviceLCD.print(toStringIp(WiFi.localIP()));
+    deviceLCD.print("                    ");
   } else {
-    lcd.setCursor(0, 0);
-    lcd.print("WIFI CONNECTION LOST");
-    lcd.setCursor(0, 1);
-    lcd.print("                    ");
+    deviceLCD.setCursor(0, 0);
+    deviceLCD.print("WIFI CONNECTION LOST");
+    deviceLCD.setCursor(0, 1);
+    deviceLCD.print("                    ");
   }
 
-  lcd.setCursor(0, 2);
-  lcd.print("                    ");
-  lcd.setCursor(0, 3);
-  lcd.print("                    ");
+  deviceLCD.setCursor(0, 2);
+  deviceLCD.print("                    ");
+  deviceLCD.setCursor(0, 3);
+  deviceLCD.print("                    ");
 }
 
 // Function to select the setup page
@@ -287,8 +287,11 @@ void LCD_print(SettingsData& settings) {
 }
 
 // Function to initialize the LCD
-void LCD_begin() {
-  lcd.begin(20, 4);  // Initialize 20x4 LCD
-  lcd.setCursor(0, 0);
-  lcd.print("Program starting");
+void LCD_begin(PubSubClient& mqttClient, RTCDateTime& inputDate, LiquidCrystal& inputLCD) {
+  DayTime = inputDate;
+  deviceLCD = inputLCD;
+  deviceLCD.begin(20, 4);  // Initialize 20x4 LCD
+  deviceLCD.setCursor(0, 0);
+  deviceLCD.print("Program starting");
+  mqttClient.publish("unit/test/", "Program starting", true);
 }

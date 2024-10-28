@@ -8,6 +8,7 @@
 #include <WiFiUdp.h>
 #include <LiquidCrystal.h>
 #include "types.h"
+#include "ESP32LCD.h"
 
 // #include "TinyGPS.h"
 // #include "Modbus.h"
@@ -44,7 +45,7 @@ private:
     // Button buttonUp;
     // Button buttonDn;
     // Button buttonOk;
-    LiquidCrystal lcd;
+    ESP32LCD deviceLCD;
 
     // GPS data
     float gpsLatitude;
@@ -67,7 +68,6 @@ private:
 
     // Time variables
     RTCDateTime DayTime;
-
     // Other private variables and methods...
 };
 

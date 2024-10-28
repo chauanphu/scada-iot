@@ -35,11 +35,11 @@ Modbus modbus(Serial2);  // Using Serial2 for Modbus and GPS
 // Button Button_UP(36, BUTTON_ANALOG, 1000, 2200);
 // Button Button_DN(36, BUTTON_ANALOG, 1000, 470);
 // Button Button_OK(36, BUTTON_ANALOG, 1000, 0);
-LiquidCrystal lcd(15 /*rs*/, 2 /*en*/, 0/*d4*/, 4 /*d5*/, 5 /*d6*/, 19 /*d7*/);
-RTCDateTime DayTime;
+LiquidCrystal glcd(15 /*rs*/, 2 /*en*/, 0/*d4*/, 4 /*d5*/, 5 /*d6*/, 19 /*d7*/);
 
+#include "ESP32LCD.h"
 #include "power_meter.h"
-#include "printLCD.h"
+// #include "printLCD.h"
 
 #include "BusinessLogicHandler.h"
 
@@ -50,11 +50,7 @@ BusinessLogicHandler::BusinessLogicHandler(PubSubClient& client, const String& m
       timeClient(ntpUDP, "europe.pool.ntp.org", 7 * 3600, 60000),
       settings({0, 0, 0, 0}),
       isAlive("1"),
-
-    //   buttonUp(36, BUTTON_ANALOG, 1000, 2200),
-    //   buttonDn(36, BUTTON_ANALOG, 1000, 470),
-    //   buttonOk(36, BUTTON_ANALOG, 1000, 0),
-      lcd(15, 2, 0, 4, 5, 19),
+      deviceLCD(DayTime, glcd),
       deviceState(false),
       scheduledHourOn(0),
       scheduledMinuteOn(0),
@@ -87,9 +83,8 @@ void BusinessLogicHandler::initializeDevices() {
 
     pinMode(PWM_AUTO_RESET, OUTPUT);
     digitalWrite(PWM_AUTO_RESET, LOW);
-
     // Initialize LCD
-    LCD_begin();
+    // deviceLCD.begin(mqttClient, DayTime, glcd);
 
     // Initialize NTP Client
     timeClient.begin();
@@ -99,7 +94,9 @@ void BusinessLogicHandler::initializeDevices() {
 
     // Initialize Modbus (using HardwareSerial)
     Serial2.begin(9600, SERIAL_8N1, RX_PIN, TX_PIN);
+    power_meter_begin();
 
+    deviceLCD.begin(mqttClient);
     // Initialize other components
     // if (power_meter_read(powerMeterData) == PowerMeterResponse::TIMEOUT) isAlive = "0";
     // else isAlive = "1";
@@ -196,6 +193,7 @@ void BusinessLogicHandler::update() {
         timeClient.update();
         lastTimeUpdate = currentMillis;
         DayTime = timeClient.getDateTime();
+        deviceLCD.setDayTime(DayTime);
     }
 
     // FLASH_ACTIVE_led(10, 1000);
@@ -214,10 +212,11 @@ void BusinessLogicHandler::update() {
     // Update LCD display
     // Intialize new settings
     
-    LCD_print(settings);
+    deviceLCD.print(settings);
     digitalWrite(LED_BUILTIN, !LED_BUILTIN_ON_STATE);
       
     // Read power meter data
+    power_meter_read(powerMeterData);
     // if (power_meter_read(powerMeterData) == PowerMeterResponse::TIMEOUT) isAlive = "0";
     // else isAlive = "1";
 
