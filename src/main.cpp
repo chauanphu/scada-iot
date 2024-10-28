@@ -30,6 +30,7 @@ void handle_command(const String& command);
 String macAddress;
 String commandTopic;
 String statusTopic;
+String aliveTopic;
 
 void setup() {
     Serial.begin(115200);
@@ -41,11 +42,11 @@ void setup() {
     Serial.println("Waiting for time synchronization...");
     
     // Wait until the time is synchronized
-    while (time(nullptr) < 100000) { // Wait until Jan 2, 1970
-        Serial.print(".");
-        delay(1000);
-    }
-    Serial.println("\nTime synchronized.");
+    // while (time(nullptr) < 100000) { // Wait until Jan 2, 1970
+    //     Serial.print(".");
+    //     delay(1000);
+    // }
+    // Serial.println("\nTime synchronized.");
 
     // Set MQTT server and callback function
     mqttClient.setServer(MQTT_SERVER, MQTT_PORT);
@@ -81,11 +82,17 @@ void loop() {
     }
     
     mqttClient.loop();
-
+    businessLogicHandler->update();  // Call update method in BusinessLogicHandler
     // Business logic: Publish device status at regular intervals
     static unsigned long lastStatusPublish = 0;
     unsigned long now = millis();
     if (now - lastStatusPublish > status_interval) { // Publish status every 5 seconds
+        // if (businessLogicHandler->isAlive == "0") {
+        //     Serial.println("Device is not alive. Skipping status publish.");
+        //     mqttClient.publish(aliveTopic.c_str(), "0", true);
+        //     lastStatusPublish = now;
+        //     return;
+        // }
         String status = businessLogicHandler->getStatus();  // Use getStatus from BusinessLogicHandler
         mqttClient.publish(statusTopic.c_str(), status.c_str());
         Serial.println("Status published.");
@@ -134,7 +141,7 @@ bool connectToMQTT() {
         String clientId = "ESP32Client-" + macAddress;
 
         // Define Last Will and Testament
-        String aliveTopic = MQTT_ALIVE_TOPIC_PREFIX + macAddress + MQTT_ALIVE_TOPIC_SUFFIX;
+        aliveTopic = MQTT_ALIVE_TOPIC_PREFIX + macAddress + MQTT_ALIVE_TOPIC_SUFFIX;
 
         const char* willMessage = "0";
         int willQoS = 1;
@@ -150,10 +157,9 @@ bool connectToMQTT() {
             Serial.println("Connected to MQTT broker");
 
             // Publish alive message upon connection
-            String alivePublishTopic = aliveTopic;
-            mqttClient.publish(alivePublishTopic.c_str(), "1", true);
+            mqttClient.publish(aliveTopic.c_str(), "1", true);
             Serial.print("Published to: ");
-            Serial.println(alivePublishTopic);
+            Serial.println(aliveTopic);
             Serial.println("Message: 1");
 
             // Subscribe to business logic topic
@@ -190,6 +196,7 @@ void mqttCallback(char* topic, byte* payload, unsigned int length) {
 
     // Handle OTA messages
     if (topicStr == MQTT_FIRMWARE_UPDATE_TOPIC) {
+        businessLogicHandler->deviceLCD.print("Performing OTA update...");
         otaHandler.handleOtaMessage(message);
     }
     // Handle business logic messages
