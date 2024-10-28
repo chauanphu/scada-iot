@@ -52,10 +52,6 @@ BusinessLogicHandler::BusinessLogicHandler(PubSubClient& client, const String& m
       isAlive("1"),
       deviceLCD(DayTime, glcd),
       deviceState(false),
-      scheduledHourOn(0),
-      scheduledMinuteOn(0),
-      scheduledHourOff(0),
-      scheduledMinuteOff(0),
       gpsLatitude(0.0),
       gpsLongitude(0.0)
       {
@@ -155,6 +151,12 @@ String BusinessLogicHandler::getStatus() {
     jsonDoc["frequency"] = String(powerMeterData.frequency, 4).toFloat();
     jsonDoc["total_energy"] = String(powerMeterData.total_energy, 4).toFloat();
 
+    // Include schedule
+    jsonDoc["hour_on"] = settings.hour_on;
+    jsonDoc["minute_on"] = settings.minute_on;
+    jsonDoc["hour_off"] = settings.hour_off;
+    jsonDoc["minute_off"] = settings.minute_off;
+    
     String status;
     serializeJson(jsonDoc, status);
     return status;
@@ -177,10 +179,11 @@ void BusinessLogicHandler::handleToggle(const String& state) {
 
 void BusinessLogicHandler::handleSchedule(int hourOn, int minuteOn, int hourOff, int minuteOff) {
     Serial.printf("Scheduling ON: %02d:%02d, OFF: %02d:%02d\n", hourOn, minuteOn, hourOff, minuteOff);
-    scheduledHourOn = hourOn;
-    scheduledMinuteOn = minuteOn;
-    scheduledHourOff = hourOff;
-    scheduledMinuteOff = minuteOff;
+    settings.hour_on = hourOn;
+    settings.minute_on = minuteOn;
+    settings.hour_off = hourOff;
+    settings.minute_off = minuteOff;
+    deviceLCD.print("Schedule updated");
 }
 
 void BusinessLogicHandler::update() {
@@ -207,7 +210,7 @@ void BusinessLogicHandler::update() {
     updateScheduling();
     digitalWrite(OUTPUT_CRT, deviceState ? HIGH : LOW);
     // Read buttons
-    // updateButtons();
+    updateButtons();
 
     // Update LCD display
     // Intialize new settings
@@ -250,8 +253,8 @@ void BusinessLogicHandler::updateGPS() {
 void BusinessLogicHandler::updateScheduling() {
     // Get current time in seconds since midnight
     int currentSeconds = DayTime.hour * 3600 + DayTime.minute * 60 + DayTime.second;
-    int onTimeSeconds = scheduledHourOn * 3600 + scheduledMinuteOn * 60;
-    int offTimeSeconds = scheduledHourOff * 3600 + scheduledMinuteOff * 60;
+    int onTimeSeconds = settings.hour_on * 3600 + settings.minute_on * 60;
+    int offTimeSeconds = settings.hour_off * 3600 + settings.minute_off * 60;
 
     // Handle device state based on schedule
     if (onTimeSeconds != offTimeSeconds) { // Valid schedule
