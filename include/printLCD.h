@@ -287,9 +287,7 @@ void LCD_print(SettingsData& settings) {
 }
 
 // Function to initialize the LCD
-void LCD_begin(PubSubClient& mqttClient, RTCDateTime& inputDate, LiquidCrystal& inputLCD) {
-  DayTime = inputDate;
-  deviceLCD = inputLCD;
+void LCD_begin(PubSubClient& mqttClient) {
   deviceLCD.begin(20, 4);  // Initialize 20x4 LCD
   deviceLCD.setCursor(0, 0);
   deviceLCD.print("Program starting");

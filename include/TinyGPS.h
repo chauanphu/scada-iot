@@ -24,26 +24,6 @@
 #define GPS_INVALID_F_ALTITUDE  1000000.0
 #define GPS_INVALID_F_SPEED     -1.0
 
-
-
-#ifndef __RTCDateTime__                                                                                       // nếu mảng lưu thời gian chưa được tạo
-#define __RTCDateTime__                                                                                       // đánh dấu đã tạo
-struct RTCDateTime {                                                                                          // mảng dữ liệu lưu thời gian
-  uint16_t year     = 0;                                                                                      // năm
-  uint8_t month     = 0;                                                                                      // tháng
-  uint8_t day       = 0;                                                                                      // ngày
-  uint8_t hour      = 0;                                                                                      // giờ
-  uint8_t minute    = 0;                                                                                      // phút
-  uint8_t second    = 0;                                                                                      // giây
-  uint8_t dayOfWeek = 0;                                                                                      // thứ
-  uint32_t unixtime = 0;                                                                                      // thời gian dài tính bằng giây từ ngày 1/1/1970
-};                                                                                                            //
-#endif                                                                                                        //
-
-
-
-
-
 class TinyGPS {
   public:
     enum {
@@ -353,8 +333,6 @@ class TinyGPS {
     }
 
 #define COMBINE(sentence_type, term_number) (((unsigned)(sentence_type) << 5) | term_number)
-
-
     // Processes a just-completed term
     // Returns true if new sentence has just passed checksum test and is validated
     bool term_complete() {
@@ -364,7 +342,6 @@ class TinyGPS {
           if (_gps_data_good) {
             _last_time_fix      = _new_time_fix;
             _last_position_fix  = _new_position_fix;
-
             switch (_sentence_type) {
               case _GPS_SENTENCE_GPRMC:
                 _time      = _new_time;
@@ -504,10 +481,8 @@ class TinyGPS {
 
 #define UUNIXDATE_BASE 946684800                                                                              // thời gian bù trừ từ ngày 1/1/1970 đến ngày 1/1/2000
 class GPS_time: public TinyGPS {                                                                              // thư viện GPS time được sử dụng hàm của TinyGPS
-  public:                                                                                                     // biến mảng toàn cục
-
-
-
+  public:
+                                                                                                       // biến mảng toàn cục
     RTCDateTime getDateTime(void) {                                                                           // hàm đọc thời gian
       RTCDateTime new_time;                                                                                   // tạo mảng lưu thòi gian
       crack_datetime(&new_time.year, &new_time.month, &new_time.day, &new_time.hour, &new_time.minute, &new_time.second);// đọc thời gian từ GPS
@@ -537,8 +512,6 @@ class GPS_time: public TinyGPS {                                                
    //   lcd.print(30000 / Time_scale, 6);                                                           // hiển thị số đt
       return ConverterUnixtimeToDateTime(Time_long + int((millis() - Time_read) / 1000.0 * Time_scale)); // trả thời gian được tính toán
     }                                                                                                         //
-
-
 
     ///////////////////////////////////////////////////////////////////////////////////////////////////////////////converter time
 

@@ -3,6 +3,7 @@
 
 #include "Arduino.h"                                                        // thư viện arduino
 #include <Udp.h>                                                            // thư viện UDP
+#include "types.h"
 
 #define SEVENZYYEARS            2208988800UL                                //
 #define NTP_PACKET_SIZE         48                                          //
@@ -11,23 +12,7 @@
 const uint8_t daysArray[]    PROGMEM = { 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31 };// số ngày có trong tháng
 const uint8_t dowArray[]     PROGMEM = { 0,   3,  2,  5,  0,  3,  5,  1,  4,  6,  2,  4 };// mảng chuyển đổi thứ của tuần
 // const char*   strMonth[]     PROGMEM = {"Unknown", "January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"};
-// const char*   strDayOfWeek[] PROGMEM = {"Unknown", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"};
-
-
-
-#ifndef __RTCDateTime__                                                                                       // nếu mảng lưu thời gian chưa được tạo
-#define __RTCDateTime__                                                                                       // đánh dấu đã tạo
-struct RTCDateTime {                                                        // mảng dữ liệu lưu thời gian
-  uint16_t year      = 0;                                                   // năm
-  uint8_t  month     = 0;                                                   // tháng
-  uint8_t  day       = 0;                                                   // ngày
-  uint8_t  hour      = 0;                                                   // giờ
-  uint8_t  minute    = 0;                                                   // phút
-  uint8_t  second    = 0;                                                   // giây
-  uint8_t  dayOfWeek = 0;                                                   // thứ
-  uint32_t unixtime  = 0;                                                   // thời gian dài tính bằng giây từ ngày 1/1/1970
-};                                                                          //
-#endif                                                                                                        //
+// const char*   strDayOfWeek[] PROGMEM = {"Unknown", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"};                                                                                                      //
 
 class NTPClient {                                                           //
   public:
