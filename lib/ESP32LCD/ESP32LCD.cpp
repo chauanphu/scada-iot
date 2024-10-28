@@ -18,8 +18,7 @@ ESP32LCD::ESP32LCD(RTCDateTime& DayTime, LiquidCrystal deviceLCD) :
 void ESP32LCD::begin(PubSubClient& mqttClient) {
     deviceLCD.begin(20, 4);  // Initialize 20x4 LCD
     deviceLCD.setCursor(0, 0);
-    deviceLCD.print("Program start");
-    mqttClient.publish("unit/test/", "Program start", true);
+    deviceLCD.print("Program starting");
 }
 
 // Set the current date and time
@@ -292,4 +291,10 @@ void ESP32LCD::print(SettingsData& settings) {
     } else {  // If in setup mode
         display_setup(settings);          // Display setup screen
     }
+}
+
+void ESP32LCD::print(String message) {
+    deviceLCD.clear();
+    deviceLCD.setCursor(0, 0);
+    deviceLCD.print(message);
 }

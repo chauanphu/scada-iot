@@ -20,6 +20,8 @@ public:
     // Main function to handle LCD display updates
     void print(SettingsData& settings);
 
+    void print(String message);
+
     void setDayTime(RTCDateTime& DayTime);
 
 private:

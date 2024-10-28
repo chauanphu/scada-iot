@@ -30,7 +30,7 @@ byte Serial2_Using;
 // Instantiate hardware components
 WiFiUDP ntpUDP;
 NTPClient timeClient(ntpUDP, "europe.pool.ntp.org", 7 * 3600, 60000);  // Adjust timezone as needed
-TinyGPS gps;
+GPS_time gps;
 Modbus modbus(Serial2);  // Using Serial2 for Modbus and GPS
 // Button Button_UP(36, BUTTON_ANALOG, 1000, 2200);
 // Button Button_DN(36, BUTTON_ANALOG, 1000, 470);
@@ -84,7 +84,6 @@ void BusinessLogicHandler::initializeDevices() {
     pinMode(PWM_AUTO_RESET, OUTPUT);
     digitalWrite(PWM_AUTO_RESET, LOW);
     // Initialize LCD
-    // deviceLCD.begin(mqttClient, DayTime, glcd);
 
     // Initialize NTP Client
     timeClient.begin();
@@ -92,7 +91,7 @@ void BusinessLogicHandler::initializeDevices() {
     // Initialize GPS (using HardwareSerial)
     Serial1.begin(9600, SERIAL_8N1, GPS_RX_PIN, GPS_TX_PIN);
 
-    // Initialize Modbus (using HardwareSerial)
+    // Initialize Modbus (using HardwareSerial) 
     Serial2.begin(9600, SERIAL_8N1, RX_PIN, TX_PIN);
     power_meter_begin();
 
@@ -185,16 +184,16 @@ void BusinessLogicHandler::handleSchedule(int hourOn, int minuteOn, int hourOff,
 }
 
 void BusinessLogicHandler::update() {
-    unsigned long currentMillis = millis();
+    timeClient.update();
 
+    unsigned long currentMillis = millis();
     // Update time from NTP client periodically
-    static unsigned long lastTimeUpdate = 0;
-    if (currentMillis - lastTimeUpdate >= status_interval) { // Update every minute
-        timeClient.update();
-        lastTimeUpdate = currentMillis;
-        DayTime = timeClient.getDateTime();
-        deviceLCD.setDayTime(DayTime);
-    }
+    // static unsigned long lastTimeUpdate = 0;
+    // if (currentMillis - lastTimeUpdate >= status_interval) { // Update every minute
+    //     lastTimeUpdate = currentMillis;
+    //     DayTime = timeClient.getDateTime();
+    //     deviceLCD.setDayTime(DayTime);
+    // }
 
     // FLASH_ACTIVE_led(10, 1000);
     digitalWrite(PR_LED, millis() % 1000 < 500);
@@ -202,6 +201,7 @@ void BusinessLogicHandler::update() {
 
     // Update GPS data
     updateGPS();
+    deviceLCD.setDayTime(DayTime);
 
     // Handle scheduling
     updateScheduling();
@@ -217,27 +217,33 @@ void BusinessLogicHandler::update() {
       
     // Read power meter data
     power_meter_read(powerMeterData);
-    // if (power_meter_read(powerMeterData) == PowerMeterResponse::TIMEOUT) isAlive = "0";
-    // else isAlive = "1";
-
-    // Other periodic tasks
 }
 
-void BusinessLogicHandler::updateGPS() {
+void processGPSData() {
+    static unsigned long timer;
+    if (millis() % 30000ul < 15000ul) return; // Update every 30 seconds
+    if (millis() < timer) return; // Wait for 1 second
+    timer = millis() + 1000;
+
     while (Serial1.available()) {
         char c = Serial1.read();
         gps.encode(c);
     }
-    // Get GPS data
+}
+
+void BusinessLogicHandler::updateGPS() {
+    RTCDateTime DayTime_net = timeClient.getDateTime();                                       // lưu thời gian vào biến DayTime
+    processGPSData();
+    RTCDateTime DayTime_gps = gps.getDateTime(); 
+
     float flat, flon;
     unsigned long age;
     gps.f_get_position(&flat, &flon, &age);
-    if (flat != GPS_INVALID_F_ANGLE) {
-        gpsLatitude = flat;
-    }
-    if (flon != GPS_INVALID_F_ANGLE) {
-        gpsLongitude = flon;
-    }
+    if (flat != GPS_INVALID_F_ANGLE) gpsLatitude = flat;
+    if (flon != GPS_INVALID_F_ANGLE) gpsLongitude = flon;
+
+    if (DayTime_net.unixtime > DayTime_gps.unixtime) DayTime = DayTime_net;
+    else DayTime = DayTime_gps;   
 }
 // Implement LCD_print() and any other required methods
 

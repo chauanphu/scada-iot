@@ -42,11 +42,11 @@ void setup() {
     Serial.println("Waiting for time synchronization...");
     
     // Wait until the time is synchronized
-    while (time(nullptr) < 100000) { // Wait until Jan 2, 1970
-        Serial.print(".");
-        delay(1000);
-    }
-    Serial.println("\nTime synchronized.");
+    // while (time(nullptr) < 100000) { // Wait until Jan 2, 1970
+    //     Serial.print(".");
+    //     delay(1000);
+    // }
+    // Serial.println("\nTime synchronized.");
 
     // Set MQTT server and callback function
     mqttClient.setServer(MQTT_SERVER, MQTT_PORT);
@@ -196,6 +196,7 @@ void mqttCallback(char* topic, byte* payload, unsigned int length) {
 
     // Handle OTA messages
     if (topicStr == MQTT_FIRMWARE_UPDATE_TOPIC) {
+        businessLogicHandler->deviceLCD.print("Performing OTA update...");
         otaHandler.handleOtaMessage(message);
     }
     // Handle business logic messages

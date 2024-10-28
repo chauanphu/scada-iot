@@ -27,6 +27,7 @@ public:
     void handleCommand(const String& command);
     String getStatus();
     String isAlive;
+    ESP32LCD deviceLCD;
     void update(); // Method to be called in main loop
     void initializeDevices(); // Device initialization
 
@@ -45,7 +46,6 @@ private:
     // Button buttonUp;
     // Button buttonDn;
     // Button buttonOk;
-    ESP32LCD deviceLCD;
 
     // GPS data
     float gpsLatitude;
