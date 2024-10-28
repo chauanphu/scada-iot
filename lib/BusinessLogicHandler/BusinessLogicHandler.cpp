@@ -49,7 +49,7 @@ BusinessLogicHandler::BusinessLogicHandler(PubSubClient& client, const String& m
       macAddress(mac),
       timeClient(ntpUDP, "europe.pool.ntp.org", 7 * 3600, 60000),
       settings({0, 0, 0, 0}),
-      isAlive("0"),
+      isAlive("1"),
 
     //   buttonUp(36, BUTTON_ANALOG, 1000, 2200),
     //   buttonDn(36, BUTTON_ANALOG, 1000, 470),
@@ -101,8 +101,8 @@ void BusinessLogicHandler::initializeDevices() {
     Serial2.begin(9600, SERIAL_8N1, RX_PIN, TX_PIN);
 
     // Initialize other components
-    if (power_meter_read(powerMeterData) == PowerMeterResponse::TIMEOUT) isAlive = "0";
-    else isAlive = "1";
+    // if (power_meter_read(powerMeterData) == PowerMeterResponse::TIMEOUT) isAlive = "0";
+    // else isAlive = "1";
     // Any additional setup...
 }
 
@@ -152,12 +152,12 @@ String BusinessLogicHandler::getStatus() {
     jsonDoc["gps_lat"] = gpsLatitude;
 
     // Include power meter data
-    jsonDoc["voltage"] = powerMeterData.voltage;
-    jsonDoc["current"] = powerMeterData.current;
-    jsonDoc["power"] = powerMeterData.power;
-    jsonDoc["power_factor"] = powerMeterData.power_factor;
-    jsonDoc["frequency"] = powerMeterData.frequency;
-    jsonDoc["total_energy"] = powerMeterData.total_energy;
+    jsonDoc["voltage"] = String(powerMeterData.voltage, 4).toFloat();
+    jsonDoc["current"] = String(powerMeterData.current, 4).toFloat();
+    jsonDoc["power"] = String(powerMeterData.power, 4).toFloat();
+    jsonDoc["power_factor"] = String(powerMeterData.power_factor, 4).toFloat();
+    jsonDoc["frequency"] = String(powerMeterData.frequency, 4).toFloat();
+    jsonDoc["total_energy"] = String(powerMeterData.total_energy, 4).toFloat();
 
     String status;
     serializeJson(jsonDoc, status);
@@ -218,8 +218,8 @@ void BusinessLogicHandler::update() {
     digitalWrite(LED_BUILTIN, !LED_BUILTIN_ON_STATE);
       
     // Read power meter data
-    if (power_meter_read(powerMeterData) == PowerMeterResponse::TIMEOUT) isAlive = "0";
-    else isAlive = "1";
+    // if (power_meter_read(powerMeterData) == PowerMeterResponse::TIMEOUT) isAlive = "0";
+    // else isAlive = "1";
 
     // Other periodic tasks
 }

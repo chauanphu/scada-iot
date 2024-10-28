@@ -87,12 +87,12 @@ void loop() {
     static unsigned long lastStatusPublish = 0;
     unsigned long now = millis();
     if (now - lastStatusPublish > status_interval) { // Publish status every 5 seconds
-        if (businessLogicHandler->isAlive == "0") {
-            Serial.println("Device is not alive. Skipping status publish.");
-            mqttClient.publish(aliveTopic.c_str(), "0", true);
-            lastStatusPublish = now;
-            return;
-        }
+        // if (businessLogicHandler->isAlive == "0") {
+        //     Serial.println("Device is not alive. Skipping status publish.");
+        //     mqttClient.publish(aliveTopic.c_str(), "0", true);
+        //     lastStatusPublish = now;
+        //     return;
+        // }
         String status = businessLogicHandler->getStatus();  // Use getStatus from BusinessLogicHandler
         mqttClient.publish(statusTopic.c_str(), status.c_str());
         Serial.println("Status published.");

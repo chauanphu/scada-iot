@@ -29,6 +29,7 @@ PowerMeterResponse power_meter_read(PowerMeterData &data) {
     return PowerMeterResponse::CONFIGURED;
   } else {
     // Request data from the Modbus device
+    modbus.setTimeout(300);
     if (modbus.requestFrom(0x01, 0x04, 0x00, 60) > 0) {
       double voltage = modbus.uint16(0) / 10.0;
       if (voltage > 0) {
@@ -52,7 +53,7 @@ PowerMeterResponse power_meter_read(PowerMeterData &data) {
     } else if (mun_erro > 100) {
       // Exceeded error threshold
       mun_erro++;
-      return PowerMeterResponse::TIMEOUT;
+      return PowerMeterResponse::TIMECOUNT;
     } else {
       return PowerMeterResponse::TIMECOUNT;
     }
