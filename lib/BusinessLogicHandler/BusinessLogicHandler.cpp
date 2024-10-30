@@ -209,9 +209,6 @@ void BusinessLogicHandler::update() {
     // Handle scheduling
     updateScheduling();
     digitalWrite(OUTPUT_CRT, deviceState ? HIGH : LOW);
-    // Read buttons
-    updateButtons();
-
     // Update LCD display
     // Intialize new settings
     

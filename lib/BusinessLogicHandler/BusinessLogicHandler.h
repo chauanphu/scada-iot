@@ -37,7 +37,6 @@ private:
     void handleSchedule(int hourOn, int minuteOn, int hourOff, int minuteOff);
     void updateGPS();
     void updateScheduling();
-    void updateButtons();
     // Hardware components
     WiFiUDP ntpUDP;
     NTPClient timeClient;
