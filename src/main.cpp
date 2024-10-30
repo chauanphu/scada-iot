@@ -196,7 +196,7 @@ void mqttCallback(char* topic, byte* payload, unsigned int length) {
 
     // Handle OTA messages
     if (topicStr == MQTT_FIRMWARE_UPDATE_TOPIC) {
-        businessLogicHandler->deviceLCD.print("Performing OTA update...");
+        businessLogicHandler->deviceLCD.print("OTA updating...");
         otaHandler.handleOtaMessage(message);
     }
     // Handle business logic messages
