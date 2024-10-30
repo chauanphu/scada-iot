@@ -61,10 +61,6 @@ private:
     
     // State variables
     bool deviceState;  // ON/OFF state
-    int scheduledHourOn;
-    int scheduledMinuteOn;
-    int scheduledHourOff;
-    int scheduledMinuteOff;
 
     // Time variables
     RTCDateTime DayTime;
