@@ -35,6 +35,8 @@ private:
     // Private methods for internal logic
     void handleToggle(const String& state);
     void handleSchedule(int hourOn, int minuteOn, int hourOff, int minuteOff);
+    void handleAuto(const String& state);
+    
     void updateGPS();
     void updateScheduling();
     // Hardware components
@@ -60,7 +62,8 @@ private:
     
     // State variables
     bool deviceState;  // ON/OFF state
-
+    bool isAuto;       // Auto mode state
+    
     // Time variables
     RTCDateTime DayTime;
     // Other private variables and methods...

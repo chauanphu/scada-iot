@@ -53,7 +53,8 @@ BusinessLogicHandler::BusinessLogicHandler(PubSubClient& client, const String& m
       deviceLCD(DayTime, glcd),
       deviceState(false),
       gpsLatitude(0.0),
-      gpsLongitude(0.0)
+      gpsLongitude(0.0),
+      isAuto(true)
       {
     // Initialize topics
     statusTopic = "unit/" + macAddress + "/status";
@@ -124,6 +125,9 @@ void BusinessLogicHandler::handleCommand(const String& command) {
         int hourOff = payload["hour_off"];
         int minuteOff = payload["minute_off"];
         handleSchedule(hourOn, minuteOn, hourOff, minuteOff);
+    } else if (commandType == "AUTO") {
+        String payloadStr = jsonDoc["payload"];
+        handleAuto(payloadStr);
     } else {
         Serial.print("Unknown command type: ");
         Serial.println(commandType);
@@ -138,7 +142,7 @@ String BusinessLogicHandler::getStatus() {
 
     // Include device state
     jsonDoc["toggle"] = deviceState ? 1 : 0;
-
+    jsonDoc["auto"] = isAuto ? 1 : 0;
     // Include GPS data
     jsonDoc["gps_log"] = gpsLongitude;
     jsonDoc["gps_lat"] = gpsLatitude;
@@ -166,9 +170,11 @@ void BusinessLogicHandler::handleToggle(const String& state) {
     if (state == "on") {
         Serial.println("Toggling device ON...");
         deviceState = true;
+        isAuto = false;
     } else if (state == "off") {
         Serial.println("Toggling device OFF...");
         deviceState = false;
+        isAuto = false;
     } else {
         Serial.print("Unknown toggle state: ");
         Serial.println(state);
@@ -184,6 +190,19 @@ void BusinessLogicHandler::handleSchedule(int hourOn, int minuteOn, int hourOff,
     settings.hour_off = hourOff;
     settings.minute_off = minuteOff;
     deviceLCD.print("Schedule updated");
+}
+
+void BusinessLogicHandler::handleAuto(const String& state) {
+    if (state == "on") {
+        Serial.println("Auto mode ON...");
+        isAuto = true;
+    } else if (state == "off") {
+        Serial.println("Auto mode OFF...");
+        isAuto = false;
+    } else {
+        Serial.print("Unknown auto state: ");
+        Serial.println(state);
+    }
 }
 
 void BusinessLogicHandler::update() {
@@ -254,7 +273,7 @@ void BusinessLogicHandler::updateScheduling() {
     int offTimeSeconds = settings.hour_off * 3600 + settings.minute_off * 60;
 
     // Handle device state based on schedule
-    if (onTimeSeconds != offTimeSeconds) { // Valid schedule
+    if ((onTimeSeconds != offTimeSeconds) && isAuto) { // Valid schedule and auto mode
         if ((currentSeconds >= onTimeSeconds && currentSeconds < offTimeSeconds) ||
             (offTimeSeconds < onTimeSeconds && (currentSeconds >= onTimeSeconds || currentSeconds < offTimeSeconds))) {
             deviceState = true;

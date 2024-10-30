@@ -126,7 +126,7 @@ bool connectToMQTT() {
 
         srand(time(0));  // Seed the random number generator
         int randomId = rand();
-        String clientId = "ESP32Client-" + String(randomId);
+        String clientId = "ESP32Client-" + macAddress + "-" + String(randomId);
 
         // Define Last Will and Testament
         aliveTopic = MQTT_ALIVE_TOPIC_PREFIX + macAddress + MQTT_ALIVE_TOPIC_SUFFIX;

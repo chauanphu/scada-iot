@@ -287,7 +287,7 @@ void ESP32LCD::print(SettingsData& settings) {
     auto_back_home();  // Check if need to return to main screen automatically
     if (!display_set) {  // If not in setup mode
         display_index_function();         // Update cursor position
-        SettingsData newSetting = new SettingsData();
+        SettingsData newSetting;
         newSetting.hour_on = settings.hour_on;
         newSetting.minute_on = settings.minute_on;
         newSetting.hour_off = settings.hour_off;
