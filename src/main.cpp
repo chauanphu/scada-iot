@@ -80,14 +80,16 @@ void loop() {
     static unsigned long lastStatusPublish = 0;
     unsigned long now = millis();
     if (now - lastStatusPublish > status_interval) { // Publish status every 5 seconds
-        // if (businessLogicHandler->isAlive == "0") {
-        //     Serial.println("Device is not alive. Skipping status publish.");
-        //     mqttClient.publish(aliveTopic.c_str(), "0", true);
-        //     lastStatusPublish = now;
-        //     return;
-        // }
         String status = businessLogicHandler->getStatus();  // Use getStatus from BusinessLogicHandler
-        mqttClient.publish(statusTopic.c_str(), status.c_str());
+        bool success = mqttClient.publish(statusTopic.c_str(), status.c_str());
+        // Send back to unit/test topic message Success: 
+        if (!success) {
+            auto error = mqttClient.state();
+            mqttClient.publish("unit/test", "Failed to publish status.");
+            mqttClient.publish("unit/test", String(error).c_str());
+        } else {
+            mqttClient.publish("unit/test", "Status published.");
+        }
         Serial.println("Status published.");
         lastStatusPublish = now;
     }
@@ -131,7 +133,9 @@ bool connectToMQTT() {
         Serial.print(":");
         Serial.println(MQTT_PORT);
 
-        String clientId = "ESP32Client-" + macAddress;
+        srand(time(0));  // Seed the random number generator
+        int randomId = rand();
+        String clientId = "ESP32Client-" + String(randomId);
 
         // Define Last Will and Testament
         aliveTopic = MQTT_ALIVE_TOPIC_PREFIX + macAddress + MQTT_ALIVE_TOPIC_SUFFIX;
@@ -189,7 +193,7 @@ void mqttCallback(char* topic, byte* payload, unsigned int length) {
 
     // Handle OTA messages
     if (topicStr == MQTT_FIRMWARE_UPDATE_TOPIC) {
-        businessLogicHandler->deviceLCD.print("OTA updateing...");
+        businessLogicHandler->deviceLCD.print("OTA updating...");
         otaHandler.handleOtaMessage(message);
     }
     // Handle business logic messages

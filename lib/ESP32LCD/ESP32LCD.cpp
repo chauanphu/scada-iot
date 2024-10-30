@@ -15,7 +15,7 @@ ESP32LCD::ESP32LCD(RTCDateTime& DayTime, LiquidCrystal deviceLCD) :
 }
 
 // Initialize the LCD
-void ESP32LCD::begin(PubSubClient& mqttClient) {
+void ESP32LCD::begin() {
     deviceLCD.begin(20, 4);  // Initialize 20x4 LCD
     deviceLCD.setCursor(0, 0);
     deviceLCD.print("Program starting");
