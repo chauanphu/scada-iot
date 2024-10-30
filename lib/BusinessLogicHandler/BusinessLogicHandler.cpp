@@ -91,7 +91,7 @@ void BusinessLogicHandler::initializeDevices() {
     Serial2.begin(9600, SERIAL_8N1, RX_PIN, TX_PIN);
     power_meter_begin();
 
-    deviceLCD.begin(mqttClient);
+    deviceLCD.begin();
     // Initialize other components
     // if (power_meter_read(powerMeterData) == PowerMeterResponse::TIMEOUT) isAlive = "0";
     // else isAlive = "1";
@@ -209,9 +209,6 @@ void BusinessLogicHandler::update() {
     // Handle scheduling
     updateScheduling();
     digitalWrite(OUTPUT_CRT, deviceState ? HIGH : LOW);
-    // Read buttons
-    updateButtons();
-
     // Update LCD display
     // Intialize new settings
     
