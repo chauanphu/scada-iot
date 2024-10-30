@@ -81,16 +81,7 @@ void loop() {
     unsigned long now = millis();
     if (now - lastStatusPublish > status_interval) { // Publish status every 5 seconds
         String status = businessLogicHandler->getStatus();  // Use getStatus from BusinessLogicHandler
-        bool success = mqttClient.publish(statusTopic.c_str(), status.c_str());
-        // Send back to unit/test topic message Success: 
-        if (!success) {
-            auto error = mqttClient.state();
-            mqttClient.publish("unit/test", "Failed to publish status.");
-            mqttClient.publish("unit/test", String(error).c_str());
-        } else {
-            mqttClient.publish("unit/test", "Status published.");
-        }
-        Serial.println("Status published.");
+        mqttClient.publish(statusTopic.c_str(), status.c_str());
         lastStatusPublish = now;
     }
 }
