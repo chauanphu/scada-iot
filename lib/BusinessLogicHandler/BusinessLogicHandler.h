@@ -10,14 +10,6 @@
 #include "types.h"
 #include "ESP32LCD.h"
 
-// #include "TinyGPS.h"
-// #include "Modbus.h"
-
-// #include "TinyGPS.h"
-// #include "Modbus.h"
-// #include "button.h"
-// #include "printLCD.h"
-
 class BusinessLogicHandler {
 public:
     // Constructor
@@ -35,9 +27,10 @@ private:
     // Private methods for internal logic
     void handleToggle(const String& state);
     void handleSchedule(int hourOn, int minuteOn, int hourOff, int minuteOff);
+    void handleAuto(const String& state);
+    
     void updateGPS();
     void updateScheduling();
-    void updateButtons();
     // Hardware components
     WiFiUDP ntpUDP;
     NTPClient timeClient;
@@ -61,7 +54,8 @@ private:
     
     // State variables
     bool deviceState;  // ON/OFF state
-
+    bool isAuto;       // Auto mode state
+    
     // Time variables
     RTCDateTime DayTime;
     // Other private variables and methods...

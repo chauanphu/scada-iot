@@ -40,17 +40,11 @@ void setup() {
     setup_wifi();
     configTime(25200, 0, "pool.ntp.org", "time.nist.gov");
     Serial.println("Waiting for time synchronization...");
-    
-    // Wait until the time is synchronized
-    // while (time(nullptr) < 100000) { // Wait until Jan 2, 1970
-    //     Serial.print(".");
-    //     delay(1000);
-    // }
-    // Serial.println("\nTime synchronized.");
 
     // Set MQTT server and callback function
     mqttClient.setServer(MQTT_SERVER, MQTT_PORT);
     mqttClient.setCallback(mqttCallback);
+    mqttClient.setBufferSize(512);
 
     // Connect to MQTT broker
     if (connectToMQTT()) {
@@ -87,15 +81,8 @@ void loop() {
     static unsigned long lastStatusPublish = 0;
     unsigned long now = millis();
     if (now - lastStatusPublish > status_interval) { // Publish status every 5 seconds
-        // if (businessLogicHandler->isAlive == "0") {
-        //     Serial.println("Device is not alive. Skipping status publish.");
-        //     mqttClient.publish(aliveTopic.c_str(), "0", true);
-        //     lastStatusPublish = now;
-        //     return;
-        // }
         String status = businessLogicHandler->getStatus();  // Use getStatus from BusinessLogicHandler
-        mqttClient.publish(statusTopic.c_str(), status.c_str());
-        Serial.println("Status published.");
+        bool success = mqttClient.publish(statusTopic.c_str(), status.c_str());
         lastStatusPublish = now;
     }
 }
@@ -138,7 +125,9 @@ bool connectToMQTT() {
         Serial.print(":");
         Serial.println(MQTT_PORT);
 
-        String clientId = "ESP32Client-" + macAddress;
+        srand(time(0));  // Seed the random number generator
+        int randomId = rand();
+        String clientId = macAddress + "-" + String(randomId);
 
         // Define Last Will and Testament
         aliveTopic = MQTT_ALIVE_TOPIC_PREFIX + macAddress + MQTT_ALIVE_TOPIC_SUFFIX;

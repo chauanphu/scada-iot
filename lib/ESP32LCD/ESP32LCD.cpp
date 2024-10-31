@@ -15,7 +15,7 @@ ESP32LCD::ESP32LCD(RTCDateTime& DayTime, LiquidCrystal deviceLCD) :
 }
 
 // Initialize the LCD
-void ESP32LCD::begin(PubSubClient& mqttClient) {
+void ESP32LCD::begin() {
     deviceLCD.begin(20, 4);  // Initialize 20x4 LCD
     deviceLCD.setCursor(0, 0);
     deviceLCD.print("Program starting");
@@ -287,7 +287,13 @@ void ESP32LCD::print(SettingsData& settings) {
     auto_back_home();  // Check if need to return to main screen automatically
     if (!display_set) {  // If not in setup mode
         display_index_function();         // Update cursor position
-        display_print_index(settings);    // Display content based on cursor position
+        SettingsData newSetting;
+        newSetting.hour_on = settings.hour_on;
+        newSetting.minute_on = settings.minute_on;
+        newSetting.hour_off = settings.hour_off;
+        newSetting.minute_off = settings.minute_off;
+        display_print_index(newSetting);    // Display content based on cursor position
+        settings = newSetting;
     } else {  // If in setup mode
         display_setup(settings);          // Display setup screen
     }

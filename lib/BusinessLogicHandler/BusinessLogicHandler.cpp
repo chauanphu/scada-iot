@@ -53,15 +53,9 @@ BusinessLogicHandler::BusinessLogicHandler(PubSubClient& client, const String& m
       deviceLCD(DayTime, glcd),
       deviceState(false),
       gpsLatitude(0.0),
-      gpsLongitude(0.0)
+      gpsLongitude(0.0),
+      isAuto(true)
       {
-    // Initialize topics
-    statusTopic = "unit/" + macAddress + "/status";
-    commandTopic = "unit/" + macAddress + "/command";
-
-    // Subscribe to command topic
-    mqttClient.subscribe(commandTopic.c_str());
-
     // Initialize devices
     initializeDevices();
 }
@@ -91,7 +85,7 @@ void BusinessLogicHandler::initializeDevices() {
     Serial2.begin(9600, SERIAL_8N1, RX_PIN, TX_PIN);
     power_meter_begin();
 
-    deviceLCD.begin(mqttClient);
+    deviceLCD.begin();
     // Initialize other components
     // if (power_meter_read(powerMeterData) == PowerMeterResponse::TIMEOUT) isAlive = "0";
     // else isAlive = "1";
@@ -124,10 +118,19 @@ void BusinessLogicHandler::handleCommand(const String& command) {
         int hourOff = payload["hour_off"];
         int minuteOff = payload["minute_off"];
         handleSchedule(hourOn, minuteOn, hourOff, minuteOff);
+    } else if (commandType == "AUTO") {
+        String payloadStr = jsonDoc["payload"];
+        handleAuto(payloadStr);
     } else {
         Serial.print("Unknown command type: ");
         Serial.println(commandType);
     }
+}
+
+String cutShort(double value) {
+    char buffer[10];
+    snprintf(buffer, sizeof(buffer), "%.2f", value);
+    return String(buffer);
 }
 
 String BusinessLogicHandler::getStatus() {
@@ -138,18 +141,19 @@ String BusinessLogicHandler::getStatus() {
 
     // Include device state
     jsonDoc["toggle"] = deviceState ? 1 : 0;
-
+    jsonDoc["auto"] = isAuto ? 1 : 0;
     // Include GPS data
     jsonDoc["gps_log"] = gpsLongitude;
     jsonDoc["gps_lat"] = gpsLatitude;
 
     // Include power meter data
-    jsonDoc["voltage"] = String(powerMeterData.voltage, 4).toFloat();
-    jsonDoc["current"] = String(powerMeterData.current, 4).toFloat();
-    jsonDoc["power"] = String(powerMeterData.power, 4).toFloat();
-    jsonDoc["power_factor"] = String(powerMeterData.power_factor, 4).toFloat();
-    jsonDoc["frequency"] = String(powerMeterData.frequency, 4).toFloat();
-    jsonDoc["total_energy"] = String(powerMeterData.total_energy, 4).toFloat();
+    jsonDoc["voltage"] = cutShort(powerMeterData.voltage);
+    jsonDoc["current"] = cutShort(powerMeterData.current);
+    jsonDoc["power_factor"] = cutShort(powerMeterData.power_factor);
+    jsonDoc["frequency"] = cutShort(powerMeterData.frequency);
+    jsonDoc["total_energy"] = cutShort(powerMeterData.total_energy);
+    jsonDoc["frequency"] = cutShort(powerMeterData.frequency);
+    jsonDoc["total_energy"] = cutShort(powerMeterData.total_energy);
 
     // Include schedule
     jsonDoc["hour_on"] = settings.hour_on;
@@ -166,9 +170,11 @@ void BusinessLogicHandler::handleToggle(const String& state) {
     if (state == "on") {
         Serial.println("Toggling device ON...");
         deviceState = true;
+        isAuto = false;
     } else if (state == "off") {
         Serial.println("Toggling device OFF...");
         deviceState = false;
+        isAuto = false;
     } else {
         Serial.print("Unknown toggle state: ");
         Serial.println(state);
@@ -184,6 +190,19 @@ void BusinessLogicHandler::handleSchedule(int hourOn, int minuteOn, int hourOff,
     settings.hour_off = hourOff;
     settings.minute_off = minuteOff;
     deviceLCD.print("Schedule updated");
+}
+
+void BusinessLogicHandler::handleAuto(const String& state) {
+    if (state == "on") {
+        Serial.println("Auto mode ON...");
+        isAuto = true;
+    } else if (state == "off") {
+        Serial.println("Auto mode OFF...");
+        isAuto = false;
+    } else {
+        Serial.print("Unknown auto state: ");
+        Serial.println(state);
+    }
 }
 
 void BusinessLogicHandler::update() {
@@ -209,9 +228,6 @@ void BusinessLogicHandler::update() {
     // Handle scheduling
     updateScheduling();
     digitalWrite(OUTPUT_CRT, deviceState ? HIGH : LOW);
-    // Read buttons
-    updateButtons();
-
     // Update LCD display
     // Intialize new settings
     
@@ -223,11 +239,6 @@ void BusinessLogicHandler::update() {
 }
 
 void processGPSData() {
-    static unsigned long timer;
-    if (millis() % 30000ul < 15000ul) return; // Update every 30 seconds
-    if (millis() < timer) return; // Wait for 1 second
-    timer = millis() + 1000;
-
     while (Serial1.available()) {
         char c = Serial1.read();
         gps.encode(c);
@@ -257,7 +268,7 @@ void BusinessLogicHandler::updateScheduling() {
     int offTimeSeconds = settings.hour_off * 3600 + settings.minute_off * 60;
 
     // Handle device state based on schedule
-    if (onTimeSeconds != offTimeSeconds) { // Valid schedule
+    if ((onTimeSeconds != offTimeSeconds) && isAuto) { // Valid schedule and auto mode
         if ((currentSeconds >= onTimeSeconds && currentSeconds < offTimeSeconds) ||
             (offTimeSeconds < onTimeSeconds && (currentSeconds >= onTimeSeconds || currentSeconds < offTimeSeconds))) {
             deviceState = true;

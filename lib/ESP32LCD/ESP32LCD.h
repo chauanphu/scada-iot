@@ -15,7 +15,7 @@ public:
     ESP32LCD(RTCDateTime& DayTime, LiquidCrystal deviceLCD);
 
     // Initialize the LCD
-    void begin(PubSubClient& mqttClient);
+    void begin();
 
     // Main function to handle LCD display updates
     void print(SettingsData& settings);
