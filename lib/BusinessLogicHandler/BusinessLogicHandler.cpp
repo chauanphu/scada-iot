@@ -6,6 +6,7 @@
 #include <LiquidCrystal.h>
 #include <WiFiUdp.h>
 #include "secrets.h"
+#include <Preferences.h>
 
 // Constants and definitions
 #define LED_BUILTIN               27
@@ -22,6 +23,7 @@
 #define GPS_RX_PIN                26
 
 byte Serial2_Using;
+Preferences preferences;
 
 // #include "NTPClient.h"
 #include "TinyGPS.h"
@@ -86,10 +88,15 @@ void BusinessLogicHandler::initializeDevices() {
     power_meter_begin();
 
     deviceLCD.begin();
-    // Initialize other components
-    // if (power_meter_read(powerMeterData) == PowerMeterResponse::TIMEOUT) isAlive = "0";
-    // else isAlive = "1";
-    // Any additional setup...
+
+    if (preferences.begin("settings", false)) {
+        settings.hour_on = preferences.getUInt("hour_on", 0);
+        settings.minute_on = preferences.getUInt("minute_on", 0);
+        settings.hour_off = preferences.getUInt("hour_off", 0);
+        settings.minute_off = preferences.getUInt("minute_off", 0);
+
+        preferences.end();
+    }
 }
 
 // Public methods
@@ -149,6 +156,7 @@ String BusinessLogicHandler::getStatus() {
     // Include power meter data
     jsonDoc["voltage"] = cutShort(powerMeterData.voltage);
     jsonDoc["current"] = cutShort(powerMeterData.current);
+    jsonDoc["power"] = cutShort(powerMeterData.power);
     jsonDoc["power_factor"] = cutShort(powerMeterData.power_factor);
     jsonDoc["frequency"] = cutShort(powerMeterData.frequency);
     jsonDoc["total_energy"] = cutShort(powerMeterData.total_energy);
@@ -189,7 +197,15 @@ void BusinessLogicHandler::handleSchedule(int hourOn, int minuteOn, int hourOff,
     settings.minute_on = minuteOn;
     settings.hour_off = hourOff;
     settings.minute_off = minuteOff;
-    deviceLCD.print("Schedule updated");
+
+    if (preferences.begin("settings", false)) {
+        preferences.putInt("hour_on", hourOn);
+        preferences.putInt("minute_on", minuteOn);
+        preferences.putInt("hour_off", hourOff);
+        preferences.putInt("minute_off", minuteOff);
+                
+        preferences.end(); // Ensure to close preferences after writing
+    }
 }
 
 void BusinessLogicHandler::handleAuto(const String& state) {
