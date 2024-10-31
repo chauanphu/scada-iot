@@ -13,7 +13,7 @@
 class BusinessLogicHandler {
 public:
     // Constructor
-    BusinessLogicHandler(PubSubClient& client, const String& mac);
+    BusinessLogicHandler();
 
     // Public methods
     void handleCommand(const String& command);
@@ -34,21 +34,10 @@ private:
     // Hardware components
     WiFiUDP ntpUDP;
     NTPClient timeClient;
-    // TinyGPS gps;
-    // Modbus modbus;
-    // Button buttonUp;
-    // Button buttonDn;
-    // Button buttonOk;
-
     // GPS data
     float gpsLatitude;
     float gpsLongitude;
 
-    // Member variables
-    PubSubClient& mqttClient;
-    String macAddress;
-    String statusTopic;
-    String commandTopic;
     SettingsData settings;
     PowerMeterData powerMeterData;
     

@@ -14,7 +14,7 @@ PubSubClient mqttClient(wifiClient);
 OTAHandler otaHandler(mqttClient);
 
 // Instantiate BusinessLogicHandler
-BusinessLogicHandler* businessLogicHandler;
+BusinessLogicHandler businessLogicHandler;
 
 // Function prototypes
 void setup_wifi();
@@ -57,7 +57,6 @@ void setup() {
     // Additional setup code if needed
     // Instantiate business logic handler after Wi-Fi is connected
     macAddress = getFormattedMAC();
-    businessLogicHandler = new BusinessLogicHandler(mqttClient, macAddress);
 }
 
 void loop() {
@@ -76,12 +75,12 @@ void loop() {
     }
     
     mqttClient.loop();
-    businessLogicHandler->update();  // Call update method in BusinessLogicHandler
+    businessLogicHandler.update();  // Call update method in BusinessLogicHandler
     // Business logic: Publish device status at regular intervals
     static unsigned long lastStatusPublish = 0;
     unsigned long now = millis();
     if (now - lastStatusPublish > status_interval) { // Publish status every 5 seconds
-        String status = businessLogicHandler->getStatus();  // Use getStatus from BusinessLogicHandler
+        String status = businessLogicHandler.getStatus();  // Use getStatus from BusinessLogicHandler
         bool success = mqttClient.publish(statusTopic.c_str(), status.c_str());
         lastStatusPublish = now;
     }
@@ -146,10 +145,10 @@ bool connectToMQTT() {
             Serial.println("Connected to MQTT broker");
 
             // Publish alive message upon connection
-            mqttClient.publish(aliveTopic.c_str(), "1", true);
-            Serial.print("Published to: ");
-            Serial.println(aliveTopic);
-            Serial.println("Message: 1");
+            // mqttClient.publish(aliveTopic.c_str(), "1", true);
+            // Serial.print("Published to: ");
+            // Serial.println(aliveTopic);
+            // Serial.println("Message: 1");
 
             // Subscribe to business logic topic
             mqttClient.subscribe(commandTopic.c_str());
@@ -166,12 +165,7 @@ bool connectToMQTT() {
 }
 
 // MQTT callback function
-void mqttCallback(char* topic, byte* payload, unsigned int length) {
-    if (businessLogicHandler == nullptr) {
-        Serial.println("Business logic handler not initialized yet.");
-        return;
-    }
-    
+void mqttCallback(char* topic, byte* payload, unsigned int length) {    
     String topicStr = String(topic);
     String message;
     for (unsigned int i = 0; i < length; i++) {
@@ -185,13 +179,13 @@ void mqttCallback(char* topic, byte* payload, unsigned int length) {
 
     // Handle OTA messages
     if (topicStr == MQTT_FIRMWARE_UPDATE_TOPIC) {
-        businessLogicHandler->deviceLCD.print("OTA updating...");
+        businessLogicHandler.deviceLCD.print("OTA updating...");
         otaHandler.handleOtaMessage(message);
     }
     // Handle business logic messages
     else if (topicStr == commandTopic) {
         Serial.println("Main - Processing business logic command...");
-        businessLogicHandler->handleCommand(message);  // Handle the command logic
+        businessLogicHandler.handleCommand(message);  // Handle the command logic
     }
 }
 

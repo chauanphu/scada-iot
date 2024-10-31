@@ -46,10 +46,8 @@ LiquidCrystal glcd(15 /*rs*/, 2 /*en*/, 0/*d4*/, 4 /*d5*/, 5 /*d6*/, 19 /*d7*/);
 #include "BusinessLogicHandler.h"
 
 // Constructor
-BusinessLogicHandler::BusinessLogicHandler(PubSubClient& client, const String& mac)
-    : mqttClient(client),
-      macAddress(mac),
-      timeClient(ntpUDP, "europe.pool.ntp.org", 7 * 3600, 60000),
+BusinessLogicHandler::BusinessLogicHandler()
+    : timeClient(ntpUDP, "europe.pool.ntp.org", 7 * 3600, 60000),
       settings({0, 0, 0, 0}),
       isAlive("1"),
       deviceLCD(DayTime, glcd),
