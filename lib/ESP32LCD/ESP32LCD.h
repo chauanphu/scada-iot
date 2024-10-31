@@ -18,7 +18,7 @@ public:
     void begin();
 
     // Main function to handle LCD display updates
-    void print(SettingsData& settings);
+    bool print(SettingsData& settings);
 
     void print(String message);
 
@@ -48,7 +48,7 @@ private:
     void setTimeOn(SettingsData& settings);
     void setTimeOff(SettingsData& settings);
     void showWifiInformation();
-    void display_setup(SettingsData& settings);
+    void display_setup(SettingsData& settings, bool& hasChanged);
     String toStringIp(IPAddress ip);
 };
 

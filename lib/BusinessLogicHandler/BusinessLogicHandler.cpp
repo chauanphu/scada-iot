@@ -245,7 +245,15 @@ void BusinessLogicHandler::update() {
     // Update LCD display
     // Intialize new settings
     
-    deviceLCD.print(settings);
+    bool hasChanged = deviceLCD.print(settings);
+    if (hasChanged && preferences.begin("settings", false)) {
+        // Update settings
+        preferences.putInt("hour_on", settings.hour_on);
+        preferences.putInt("minute_on", settings.minute_on);
+        preferences.putInt("hour_off", settings.hour_off);
+        preferences.putInt("minute_off", settings.minute_off);
+        preferences.end(); // Ensure to close preferences after writing
+    }
     digitalWrite(LED_BUILTIN, !LED_BUILTIN_ON_STATE);
       
     // Read power meter data

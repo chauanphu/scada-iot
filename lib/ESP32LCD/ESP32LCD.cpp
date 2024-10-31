@@ -272,30 +272,35 @@ void ESP32LCD::showWifiInformation() {
 }
 
 // Function to select the setup page
-void ESP32LCD::display_setup(SettingsData& settings) {
+void ESP32LCD::display_setup(SettingsData& settings, bool& hasChanged) {
     if (Cursor_line == 0) {
         setTimeOn(settings);
+        hasChanged = true;
     } else if (Cursor_line == 1) {
         setTimeOff(settings);
+        hasChanged = true;
     } else {
         showWifiInformation();
     }
 }
 
 // Main function to handle LCD display updates
-void ESP32LCD::print(SettingsData& settings) {
+bool ESP32LCD::print(SettingsData& settings) {
     auto_back_home();  // Check if need to return to main screen automatically
     if (!display_set) {  // If not in setup mode
         display_index_function();         // Update cursor position
+        display_print_index(settings);    // Display content based on cursor position
+        return false;
+    } else {  // If in setup mode
         SettingsData newSetting;
+        bool hasChanged = false;
         newSetting.hour_on = settings.hour_on;
         newSetting.minute_on = settings.minute_on;
         newSetting.hour_off = settings.hour_off;
         newSetting.minute_off = settings.minute_off;
-        display_print_index(newSetting);    // Display content based on cursor position
+        display_setup(newSetting, hasChanged);          // Display setup screen
         settings = newSetting;
-    } else {  // If in setup mode
-        display_setup(settings);          // Display setup screen
+        return hasChanged;
     }
 }
 
