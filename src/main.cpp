@@ -44,6 +44,7 @@ void setup() {
     // Set MQTT server and callback function
     mqttClient.setServer(MQTT_SERVER, MQTT_PORT);
     mqttClient.setCallback(mqttCallback);
+    mqttClient.setBufferSize(512);
 
     // Connect to MQTT broker
     if (connectToMQTT()) {
@@ -81,7 +82,7 @@ void loop() {
     unsigned long now = millis();
     if (now - lastStatusPublish > status_interval) { // Publish status every 5 seconds
         String status = businessLogicHandler->getStatus();  // Use getStatus from BusinessLogicHandler
-        mqttClient.publish(statusTopic.c_str(), status.c_str());
+        bool success = mqttClient.publish(statusTopic.c_str(), status.c_str());
         lastStatusPublish = now;
     }
 }
@@ -126,7 +127,7 @@ bool connectToMQTT() {
 
         srand(time(0));  // Seed the random number generator
         int randomId = rand();
-        String clientId = "ESP32Client-" + macAddress + "-" + String(randomId);
+        String clientId = macAddress + "-" + String(randomId);
 
         // Define Last Will and Testament
         aliveTopic = MQTT_ALIVE_TOPIC_PREFIX + macAddress + MQTT_ALIVE_TOPIC_SUFFIX;

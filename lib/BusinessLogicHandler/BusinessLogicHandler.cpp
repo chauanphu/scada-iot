@@ -56,13 +56,6 @@ BusinessLogicHandler::BusinessLogicHandler(PubSubClient& client, const String& m
       gpsLongitude(0.0),
       isAuto(true)
       {
-    // Initialize topics
-    statusTopic = "unit/" + macAddress + "/status";
-    commandTopic = "unit/" + macAddress + "/command";
-
-    // Subscribe to command topic
-    mqttClient.subscribe(commandTopic.c_str());
-
     // Initialize devices
     initializeDevices();
 }
@@ -134,6 +127,12 @@ void BusinessLogicHandler::handleCommand(const String& command) {
     }
 }
 
+String cutShort(double value) {
+    char buffer[10];
+    snprintf(buffer, sizeof(buffer), "%.2f", value);
+    return String(buffer);
+}
+
 String BusinessLogicHandler::getStatus() {
     StaticJsonDocument<1024> jsonDoc;
 
@@ -148,12 +147,13 @@ String BusinessLogicHandler::getStatus() {
     jsonDoc["gps_lat"] = gpsLatitude;
 
     // Include power meter data
-    jsonDoc["voltage"] = String(powerMeterData.voltage, 4).toFloat();
-    jsonDoc["current"] = String(powerMeterData.current, 4).toFloat();
-    jsonDoc["power"] = String(powerMeterData.power, 4).toFloat();
-    jsonDoc["power_factor"] = String(powerMeterData.power_factor, 4).toFloat();
-    jsonDoc["frequency"] = String(powerMeterData.frequency, 4).toFloat();
-    jsonDoc["total_energy"] = String(powerMeterData.total_energy, 4).toFloat();
+    jsonDoc["voltage"] = cutShort(powerMeterData.voltage);
+    jsonDoc["current"] = cutShort(powerMeterData.current);
+    jsonDoc["power_factor"] = cutShort(powerMeterData.power_factor);
+    jsonDoc["frequency"] = cutShort(powerMeterData.frequency);
+    jsonDoc["total_energy"] = cutShort(powerMeterData.total_energy);
+    jsonDoc["frequency"] = cutShort(powerMeterData.frequency);
+    jsonDoc["total_energy"] = cutShort(powerMeterData.total_energy);
 
     // Include schedule
     jsonDoc["hour_on"] = settings.hour_on;
@@ -239,11 +239,6 @@ void BusinessLogicHandler::update() {
 }
 
 void processGPSData() {
-    static unsigned long timer;
-    if (millis() % 30000ul < 15000ul) return; // Update every 30 seconds
-    if (millis() < timer) return; // Wait for 1 second
-    timer = millis() + 1000;
-
     while (Serial1.available()) {
         char c = Serial1.read();
         gps.encode(c);
