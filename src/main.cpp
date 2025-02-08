@@ -6,39 +6,6 @@
 #include "BusinessLogicHandler.h" // Business logic for the device
 #include <time.h>  // For time management
 
-// --- Dummy BusinessLogicHandler Implementation ---
-// If you do not yet have an implementation for BusinessLogicHandler, you can create a minimal version.
-// Create a file named BusinessLogicHandler.h with content similar to:
-/*
-#ifndef BUSINESSLOGICHANDLER_H
-#define BUSINESSLOGICHANDLER_H
-
-#include <Arduino.h>
-
-class BusinessLogicHandler {
-public:
-  BusinessLogicHandler() {}
-  // Call this regularly from loop() to perform any periodic processing
-  void update() {
-    // For testing, you might simply print a message
-    // Serial.println("BusinessLogicHandler updating...");
-  }
-  // Return a status string (for example, in JSON format)
-  String getStatus() {
-    // For testing, return a fixed status message.
-    return "{\"status\":\"ok\"}";
-  }
-  // Process a command (if needed)
-  void handleCommand(const String& command) {
-    Serial.print("BusinessLogicHandler received command: ");
-    Serial.println(command);
-  }
-};
-
-#endif
-*/
-// --- End Dummy Implementation ---
-
 // Global objects
 WiFiClient wifiClient;
 PubSubClient mqttClient(wifiClient);
