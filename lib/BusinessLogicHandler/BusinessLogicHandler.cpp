@@ -1,11 +1,4 @@
 #include "BusinessLogicHandler.h"
-#include <ArduinoJson.h>
-#include <time.h>
-#include <Arduino.h>
-#include <Udp.h>
-#include <LiquidCrystal.h>
-#include <WiFiUdp.h>
-#include "secrets.h"
 #include <Preferences.h>
 
 // Constants and definitions
@@ -31,7 +24,6 @@ Preferences preferences;
 #include "button.h"
 // Instantiate hardware components
 WiFiUDP ntpUDP;
-NTPClient timeClient(ntpUDP, "europe.pool.ntp.org", 7 * 3600, 60000);  // Adjust timezone as needed
 GPS_time gps;
 Modbus modbus(Serial2);  // Using Serial2 for Modbus and GPS
 // Button Button_UP(36, BUTTON_ANALOG, 1000, 2200);
@@ -76,7 +68,7 @@ void BusinessLogicHandler::initializeDevices() {
     // Initialize LCD
 
     // Initialize NTP Client
-    timeClient.begin();
+    // timeClient.begin();
 
     // Initialize GPS (using HardwareSerial)
     Serial1.begin(9600, SERIAL_8N1, GPS_RX_PIN, GPS_TX_PIN);
@@ -88,10 +80,10 @@ void BusinessLogicHandler::initializeDevices() {
     deviceLCD.begin();
 
     if (preferences.begin("settings", false)) {
-        settings.hour_on = preferences.getUInt("hour_on", 0);
+        settings.hour_on = preferences.getUInt("hour_on", 18);
         settings.minute_on = preferences.getUInt("minute_on", 0);
-        settings.hour_off = preferences.getUInt("hour_off", 0);
-        settings.minute_off = preferences.getUInt("minute_off", 0);
+        settings.hour_off = preferences.getUInt("hour_off", 5);
+        settings.minute_off = preferences.getUInt("minute_off", 45);
 
         preferences.end();
     }
@@ -223,13 +215,6 @@ void BusinessLogicHandler::update() {
     timeClient.update();
 
     unsigned long currentMillis = millis();
-    // Update time from NTP client periodically
-    // static unsigned long lastTimeUpdate = 0;
-    // if (currentMillis - lastTimeUpdate >= status_interval) { // Update every minute
-    //     lastTimeUpdate = currentMillis;
-    //     DayTime = timeClient.getDateTime();
-    //     deviceLCD.setDayTime(DayTime);
-    // }
 
     // FLASH_ACTIVE_led(10, 1000);
     digitalWrite(PR_LED, millis() % 1000 < 500);

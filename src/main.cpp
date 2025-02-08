@@ -1,10 +1,43 @@
 #include <WiFi.h>
 #include <PubSubClient.h>
 #include <ArduinoJson.h> // JSON library for handling status in JSON format
-#include "secrets.h"
+#include "secrets.h"     // Must define: WIFI_SSID, WIFI_PASSWORD, MQTT_SERVER, MQTT_PORT, MQTT_COMMAND_TOPIC_PREFIX, MQTT_COMMAND_TOPIC_SUFFIX, MQTT_STATUS_TOPIC_PREFIX, MQTT_STATUS_TOPIC_SUFFIX, MQTT_FIRMWARE_UPDATE_TOPIC, etc.
 #include "OTAHandler.h"
+#include "BusinessLogicHandler.h" // Business logic for the device
 #include <time.h>  // For time management
-#include "BusinessLogicHandler.h"
+
+// --- Dummy BusinessLogicHandler Implementation ---
+// If you do not yet have an implementation for BusinessLogicHandler, you can create a minimal version.
+// Create a file named BusinessLogicHandler.h with content similar to:
+/*
+#ifndef BUSINESSLOGICHANDLER_H
+#define BUSINESSLOGICHANDLER_H
+
+#include <Arduino.h>
+
+class BusinessLogicHandler {
+public:
+  BusinessLogicHandler() {}
+  // Call this regularly from loop() to perform any periodic processing
+  void update() {
+    // For testing, you might simply print a message
+    // Serial.println("BusinessLogicHandler updating...");
+  }
+  // Return a status string (for example, in JSON format)
+  String getStatus() {
+    // For testing, return a fixed status message.
+    return "{\"status\":\"ok\"}";
+  }
+  // Process a command (if needed)
+  void handleCommand(const String& command) {
+    Serial.print("BusinessLogicHandler received command: ");
+    Serial.println(command);
+  }
+};
+
+#endif
+*/
+// --- End Dummy Implementation ---
 
 // Global objects
 WiFiClient wifiClient;
@@ -22,24 +55,35 @@ bool connectToMQTT();
 String getFormattedMAC();
 void mqttCallback(char* topic, byte* payload, unsigned int length);
 
-// Abstract business logic function prototypes
-String get_status();
-void handle_command(const String& command);
-
-// Global variables
+// Global variables for topics and MAC address
 String macAddress;
 String commandTopic;
 String statusTopic;
 String aliveTopic;
 
 void setup() {
+    // Initialize network interface
+    esp_netif_init();
+
     Serial.begin(115200);
     Serial.println("Booting...");
 
     // Connect to Wi-Fi
     setup_wifi();
+    
+    // Set time for NTP synchronization (adjust timezone offset as needed)
     configTime(25200, 0, "pool.ntp.org", "time.nist.gov");
     Serial.println("Waiting for time synchronization...");
+
+    // After Wi-Fi is connected, set up topics using the formatted MAC address.
+    // (Assumes your secrets.h defines the topic prefixes and suffixes.)
+    if (WiFi.status() == WL_CONNECTED) {
+        macAddress = getFormattedMAC();
+        commandTopic = String(MQTT_COMMAND_TOPIC_PREFIX) + macAddress + String(MQTT_COMMAND_TOPIC_SUFFIX);
+        statusTopic  = String(MQTT_STATUS_TOPIC_PREFIX)  + macAddress + String(MQTT_STATUS_TOPIC_SUFFIX);
+        Serial.print("MAC Address: ");
+        Serial.println(macAddress);
+    }
 
     // Set MQTT server and callback function
     mqttClient.setServer(MQTT_SERVER, MQTT_PORT);
@@ -48,15 +92,12 @@ void setup() {
 
     // Connect to MQTT broker
     if (connectToMQTT()) {
-        // Initialize OTA functionality (subscribe to OTA topic)
+        Serial.println("MQTT connection established.");
+        // Initialize OTA functionality (subscribe to OTA topic, etc.)
         otaHandler.setupOTA();
     } else {
         Serial.println("Failed to connect to MQTT broker in setup.");
     }
-
-    // Additional setup code if needed
-    // Instantiate business logic handler after Wi-Fi is connected
-    macAddress = getFormattedMAC();
 }
 
 void loop() {
@@ -75,15 +116,26 @@ void loop() {
     }
     
     mqttClient.loop();
-    businessLogicHandler.update();  // Call update method in BusinessLogicHandler
-    // Business logic: Publish device status at regular intervals
+
+    // Call update method in BusinessLogicHandler
+    businessLogicHandler.update();
+
+    // Publish device status at regular intervals
     static unsigned long lastStatusPublish = 0;
     unsigned long now = millis();
-    if (now - lastStatusPublish > status_interval) { // Publish status every 5 seconds
-        String status = businessLogicHandler.getStatus();  // Use getStatus from BusinessLogicHandler
+    if (now - lastStatusPublish > status_interval) {
+        String status = businessLogicHandler.getStatus();
         bool success = mqttClient.publish(statusTopic.c_str(), status.c_str());
+        if (success) {
+            Serial.print("Published status: ");
+            Serial.println(status);
+        } else {
+            Serial.println("Failed to publish status.");
+        }
         lastStatusPublish = now;
     }
+
+    delay(10);  // Small delay to avoid busy looping
 }
 
 // Function to connect to Wi-Fi
@@ -104,19 +156,14 @@ void setup_wifi() {
 
     if (WiFi.status() == WL_CONNECTED) {
         Serial.println("\nWi-Fi connected");
-        // Get and format MAC address
-        macAddress = getFormattedMAC();
-        commandTopic = MQTT_COMMAND_TOPIC_PREFIX + macAddress + MQTT_COMMAND_TOPIC_SUFFIX;
-        statusTopic = MQTT_STATUS_TOPIC_PREFIX + macAddress + MQTT_STATUS_TOPIC_SUFFIX;
-        Serial.print("MAC Address: ");
-        Serial.println(macAddress);
+        Serial.print("IP address: ");
+        Serial.println(WiFi.localIP());
     } else {
         Serial.println("\nFailed to connect to Wi-Fi");
-        // Implement retry logic or enter deep sleep
     }
 }
 
-// Function to connect to MQTT broker with Last Will and Testament
+// Function to connect to MQTT broker with LWT if needed
 bool connectToMQTT() {
     while (!mqttClient.connected()) {
         Serial.print("Connecting to MQTT broker at ");
@@ -124,38 +171,26 @@ bool connectToMQTT() {
         Serial.print(":");
         Serial.println(MQTT_PORT);
 
-        srand(time(0));  // Seed the random number generator
-        int randomId = rand();
-        String clientId = macAddress + "-" + String(randomId);
+        // Generate a random client ID
+        String clientId = macAddress + "-" + String(random(0, 10000));
 
-        // Define Last Will and Testament
-        aliveTopic = MQTT_ALIVE_TOPIC_PREFIX + macAddress + MQTT_ALIVE_TOPIC_SUFFIX;
-
+        // Optionally define Last Will and Testament here
+        aliveTopic = String(MQTT_ALIVE_TOPIC_PREFIX) + macAddress + String(MQTT_ALIVE_TOPIC_SUFFIX);
         const char* willMessage = "0";
         int willQoS = 1;
         bool willRetain = true;
 
-        // Attempt to connect with LWT
         if (mqttClient.connect(clientId.c_str(),
-                               NULL, NULL,          // Username and password if required
+                               NULL, NULL, // Username and password if needed
                                aliveTopic.c_str(),
                                willQoS,
                                willRetain,
                                willMessage)) {
-            Serial.println("Connected to MQTT broker");
-
-            // Publish alive message upon connection
-            // mqttClient.publish(aliveTopic.c_str(), "1", true);
-            // Serial.print("Published to: ");
-            // Serial.println(aliveTopic);
-            // Serial.println("Message: 1");
-
-            // Subscribe to business logic topic
+            Serial.println("Connected to MQTT broker.");
+            // Optionally subscribe to command topic
             mqttClient.subscribe(commandTopic.c_str());
-            Serial.print("Subscribed to: ");
-            Serial.println(commandTopic);
         } else {
-            Serial.print("Failed to connect to MQTT, rc=");
+            Serial.print("MQTT connect failed, state=");
             Serial.print(mqttClient.state());
             Serial.println(". Trying again in 5 seconds...");
             delay(5000);
@@ -165,31 +200,29 @@ bool connectToMQTT() {
 }
 
 // MQTT callback function
-void mqttCallback(char* topic, byte* payload, unsigned int length) {    
+void mqttCallback(char* topic, byte* payload, unsigned int length) {
     String topicStr = String(topic);
     String message;
     for (unsigned int i = 0; i < length; i++) {
         message += (char)payload[i];
     }
 
-    Serial.print("Main - Message arrived on topic: ");
+    Serial.print("MQTT message arrived on topic: ");
     Serial.println(topicStr);
-    Serial.print("Main - Message: ");
+    Serial.print("Message: ");
     Serial.println(message);
 
-    // Handle OTA messages
-    if (topicStr == MQTT_FIRMWARE_UPDATE_TOPIC) {
-        businessLogicHandler.deviceLCD.print("OTA updating...");
+    // Handle OTA messages if the topic matches
+    if (topicStr == String(MQTT_FIRMWARE_UPDATE_TOPIC)) {
         otaHandler.handleOtaMessage(message);
     }
-    // Handle business logic messages
+    // Handle business logic commands if needed
     else if (topicStr == commandTopic) {
-        Serial.println("Main - Processing business logic command...");
-        businessLogicHandler.handleCommand(message);  // Handle the command logic
+        businessLogicHandler.handleCommand(message);
     }
 }
 
-// Utility function to get formatted MAC address
+// Utility function to get formatted MAC address (remove colons and convert to lowercase)
 String getFormattedMAC() {
     String mac = WiFi.macAddress();
     mac.replace(":", "");
